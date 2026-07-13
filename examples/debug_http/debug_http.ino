@@ -1,7 +1,7 @@
 // for arduino uno
-#include <WiFiS3.h>
 #include "arduino_secrets.h"
 #include <HydroServerHTTPClient.h>
+#include <WiFiS3.h>
 
 // for mayfly
 // #define TINY_GSM_MODEM_XBEE
@@ -15,32 +15,29 @@
 // #include "arduino_secrets.h"
 // #include <ArduinoJson.h>
 
-
-
-const char* ssid = "USU-guest";
-const char* password = 0;
+const char *ssid = "USU-guest";
+const char *password = 0;
 
 unsigned long lastPostTime = 0;
 const unsigned long postInterval = 20000;
 int currentHour = 3;
 
-
-// const char* serverAddress = "d1yuif7k84op9r.cloudfront.net"; 
-const char* serverAddress = "playground.hydroserver.org";
+// const char* serverAddress = "d1yuif7k84op9r.cloudfront.net";
+const char *serverAddress = "playground.hydroserver.org";
 // // const char* serverAddress = "129.123.0.1";
 // // const char* serverAddress = "localhost";
-const int   serverPort    = 443;
+const int serverPort = 443;
 // const char* apiPath       = "/api/sensorthings/v1.1/Observations";
 // // for playground
-const char* apiKey        = "MVZDruGZXYcp44Pgcb9nPetpIUl84mqlcQzvfJwUj8hfIz1qpElvNXQ";
+const char *apiKey = "MVZDruGZXYcp44Pgcb9nPetpIUl84mqlcQzvfJwUj8hfIz1qpElvNXQ";
 
-const char* datastreamId  = "019f246b-c5b9-7b45-aac6-261adc526b55";
+const char *datastreamId = "019f246b-c5b9-7b45-aac6-261adc526b55";
 
 // for arduino uno
 WiFiClient wifiClient;
-WiFiSSLClient sslClient; 
-HydroServerHTTPClient hsClient (sslClient,serverAddress,serverPort);
-Observation temperature = { "Temperature", datastreamId};
+WiFiSSLClient sslClient;
+HydroServerHTTPClient hsClient(sslClient, serverAddress, serverPort);
+Observation temperature = {"Temperature", datastreamId};
 
 // HttpClient httpClient(sslClient,serverAddress,serverPort);
 
@@ -58,7 +55,7 @@ Observation temperature = { "Temperature", datastreamId};
 void connectWiFi() {
   delay(2000);
   Serial.print("Connecting to WiFi: ");
-  WiFi.begin(ssid,password);
+  WiFi.begin(ssid, password);
 
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
@@ -75,7 +72,7 @@ void connectWiFi() {
 String getNextTimestampISO8601() {
   char buffer[25];
   snprintf(buffer, sizeof(buffer), "2026-07-08T%02d:59:43Z", currentHour);
-  currentHour = (currentHour + 1) % 24; 
+  currentHour = (currentHour + 1) % 24;
   return String(buffer);
 }
 
@@ -119,10 +116,9 @@ void loop() {
     String timestamp = getNextTimestampISO8601();
     temperature.value = randomValue;
 
-    int status = hsClient.publishObservation(temperature,timestamp.c_str());
+    int status = hsClient.publishObservation(temperature, timestamp.c_str());
     Serial.println(randomValue);
 
     Serial.print(hsClient.getResponseBody());
   }
-
 }

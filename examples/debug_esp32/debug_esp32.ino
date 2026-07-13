@@ -12,8 +12,7 @@ void setup() {
   XbeeSerial.begin(9600);
   delay(3000);
 
-
-  WiFi.mode(WIFI_STA);  // Initialize WiFi in station mode (doesn't connect yet)
+  WiFi.mode(WIFI_STA); // Initialize WiFi in station mode (doesn't connect yet)
 
   Serial.print("MAC address: ");
   Serial.println(WiFi.macAddress());

@@ -1,20 +1,18 @@
-#include <WiFiS3.h>
 #include "arduino_secrets.h"
 #include <HydroServerMQTTClient.h>
+#include <WiFiS3.h>
 
-const char* MQTT_BROKER = "raspberrypi1.mypc.usu.edu";
-const char* datastreamId = "019eae3f-3450-70db-b5d2-a55879b4d681";
+const char *MQTT_BROKER = "raspberrypi1.mypc.usu.edu";
+const char *datastreamId = "019eae3f-3450-70db-b5d2-a55879b4d681";
 
-const char* ssid = "USU-guest";
-const char* password = 0;
+const char *ssid = "USU-guest";
+const char *password = 0;
 
-
-const char* SITE_CODE = "uwrl";
+const char *SITE_CODE = "uwrl";
 WiFiClient wifiClient;
 HydroServerMQTTClient mqttClient(wifiClient, MQTT_BROKER);
 
-Observation temperature = { "Temperature", "uuid-temperature"};
-
+Observation temperature = {"Temperature", "uuid-temperature"};
 
 // for realtime clock
 #include <Sodaq_DS3231.h>
@@ -22,7 +20,7 @@ Observation temperature = { "Temperature", "uuid-temperature"};
 void connectToWiFi() {
   delay(2000);
   Serial.print("Connecting to WiFi: ");
-  WiFi.begin(ssid,password);
+  WiFi.begin(ssid, password);
 
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
@@ -37,11 +35,10 @@ void connectToWiFi() {
 }
 
 String getISO8601Timestamp() {
-  DateTime now = rtc.now();  
+  DateTime now = rtc.now();
   char buf[25];
-  snprintf(buf, sizeof(buf), "%04d-%02d-%02dT%02d:%02d:%02dZ",
-           now.year(), now.month(), now.date(),
-           now.hour(), now.minute(), now.second());
+  snprintf(buf, sizeof(buf), "%04d-%02d-%02dT%02d:%02d:%02dZ", now.year(),
+           now.month(), now.date(), now.hour(), now.minute(), now.second());
   return String(buf);
 }
 
@@ -57,28 +54,25 @@ void setup() {
 
   mqttClient.setKeepAliveInterval(150000UL);
   mqttClient.setClientID("arduino-enlab");
-  if(!mqttClient.connectToBroker()){
+  if (!mqttClient.connectToBroker()) {
     Serial.println("Cannot connect to Broker. Connection Error is ");
     Serial.println(mqttClient.getConnectionError());
-    // it make no sense to work further when connection to broker is not successful
-    while (1);
+    // it make no sense to work further when connection to broker is not
+    // successful
+    while (1)
+      ;
   };
-  
 
   Serial.println("Connection to Broker Successful");
 
   rtc.begin();
   rtc.setDateTime(DateTime(2026, 7, 7, 14, 30, 0, 2));
- 
 }
 
 void loop() {
   mqttClient.poll();
   String currentTimeStamp = getISO8601Timestamp();
   temperature.value = 30;
-  mqttClient.publishObservation(
-    temperature,
-    currentTimeStamp.c_str()
-  );
-  delay(10000); 
+  mqttClient.publishObservation(temperature, currentTimeStamp.c_str());
+  delay(10000);
 }
