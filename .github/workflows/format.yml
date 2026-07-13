@@ -1,11 +1,16 @@
 name: Clang Format Checker
 on: 
   push:
-    branches:
+    branches: &branches
       - main
+    paths: &paths
+      - src/**
+      - examples/**/*.ino
+      - .github/workflows/*.yml
   pull_request:
-    branches:
-      - main 
+    branches: *branches
+    paths: *paths
+  
 jobs:
   clang-format-checking:
     runs-on: ubuntu-latest
