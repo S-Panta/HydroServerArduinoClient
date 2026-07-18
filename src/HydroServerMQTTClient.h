@@ -5,8 +5,6 @@
 #include <ArduinoMqttClient.h>
 #include <DataPublisher.h>
 
-// the topic prefix for posting environmental sensor data should be in format
-// sitecode
 extern const char *SITE_CODE;
 
 class HydroServerMQTTClient : public DataPublisher {
@@ -27,7 +25,7 @@ public:
   void setAuthentication(const char *username, const char *password);
   void setClientID(const char *clientId);
 
-  int setLastWill(const char *lastWillTopic, const char *payload);
+  int setLastWill(const char *payload);
 
   // session related function
   void setCleanSession(bool cleanSession);
@@ -64,7 +62,7 @@ private:
   const char *_clientId;
   const char *_username;
   const char *_password;
-  unsigned long _keepAliveSeconds = 20;
+  unsigned long _keepAliveSeconds = 60;
   unsigned long _connectionTimeout = 20;
   bool _cleanSession = false;
   const char *_sitecode = SITE_CODE;

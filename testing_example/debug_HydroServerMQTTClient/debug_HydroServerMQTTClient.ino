@@ -1,9 +1,9 @@
 #include "arduino_secrets.h"
-const char* ssid = "USU-guest";
-const char* password = 0;
+const char* ssid = WIFI_SSID;
+const char* password = WIFI_PASS;
 
 
-const char* MQTT_BROKER = "144.39.67.171";
+const char* MQTT_BROKER = "192.168.0.101";
 const int MQTT_PORT = 1883;
 
 
@@ -21,7 +21,7 @@ HydroServerMQTTClient mqttClient(wifiClient, MQTT_BROKER);
 const char* datastreamId = "019eae3f-3450-70db-b5d2-a55879b4d681";
 // DataStream phDatastream   = { "pH",          "uuid-ph",         };
 
-Observation temperature = { "Temperature", "uuid-temperature"};
+Observation temperature = { "temperature", "uuidtemperature","tempsensor"};
 // DataStream* datastreams[] = { &tempDatastream, &phDatastream };
 
 void connectWiFi() {
@@ -51,9 +51,7 @@ void setup() {
   Serial.println("connecting to broker");
 
   mqttClient.setClientID("Arduinopublisher");
-  // This should be in seconds
-  mqttClient.setKeepAliveInterval(5);
-
+  mqttClient.setLastWill("Shutting down the arduion");
 
   if(!mqttClient.connectToBroker()){
     Serial.println("connection not successful.Connection Error is ");
@@ -66,21 +64,21 @@ void setup() {
 
 void loop() {
  
-  // mqttClient.poll();
+  mqttClient.poll();
  
-  Serial.print("loop runs  every 10 seconds");
-  unsigned long currentMillis = millis();
-  if (currentMillis - previousMillis >= interval) {
-    Serial.println("publishing every 10 second");
+  // Serial.print("loop runs  every 10 seconds");
+  // unsigned long currentMillis = millis();
+  // if (currentMillis - previousMillis >= interval) {
+  //   Serial.println("publishing every 10 second");
 
-    float randomTemp;
-    randomTemp = random(200, 351) / 10.0;
-    previousMillis = currentMillis;
+  //   float randomTemp;
+  //   randomTemp = random(200, 351) / 10.0;
+  //   previousMillis = currentMillis;
       
-    temperature.value = randomTemp;
-      // phDatastream.value   = 7.2;
-    Serial.println(mqttClient.publishObservation(temperature,"2026-06-15T00:00:00Z"));
-  };
+  //   temperature.value = randomTemp;
+  //     // phDatastream.value   = 7.2;
+  //   Serial.println(mqttClient.publishObservation(temperature,"2026-06-15T00:00:00Z"));
+  // };
  delay(10000);
 
   //   // mqttClient.publishAll(datastreams, 2,  "2026-06-15T00:00:00Z");
