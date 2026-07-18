@@ -42,6 +42,7 @@ int HydroServerMQTTClient::connectToBroker() {
   _mqttClient.setKeepAliveInterval(_keepAliveSeconds * 1000UL);
   _mqttClient.setConnectionTimeout(_connectionTimeout * 1000UL);
   _mqttClient.setCleanSession(_cleanSession);
+
   return _mqttClient.connect(_broker, _port);
 }
 
@@ -59,7 +60,11 @@ int HydroServerMQTTClient::connectToBroker(const char *broker, uint16_t port,
 }
 
 void HydroServerMQTTClient::setClientID(const char *clientId) {
-  if (clientId != nullptr || strlen(clientId) > 0) {
+  // if clientid is not provided, the ArduinoMqttlibrary randomly generates a
+  // client id in form of Arduino-millis() where millis is the time when device
+  // was connected to the server Therefore,user should provide unique client id
+  // for persistent session
+  if (clientId != nullptr && strlen(clientId) > 0) {
     _clientId = clientId;
   }
 }
@@ -94,8 +99,8 @@ int HydroServerMQTTClient::publishObservation(const Observation &observation,
   // topic construction is of format
   // “sitecode/datalogger/observedproperty/observations”
   char topic[128];
-  snprintf(topic, sizeof(topic), "%s/%s/%s/observations", _sitecode, _clientId,
-           observation.observedProperty);
+  snprintf(topic, sizeof(topic), "%s/%s/%s/%s/observations", _sitecode,
+           _clientId, observation.sensorId, observation.observedProperty);
   _mqttClient.beginMessage(topic, (unsigned long)payload.length());
 
   _mqttClient.print(payload);
@@ -105,13 +110,15 @@ int HydroServerMQTTClient::publishObservation(const Observation &observation,
   return _mqttClient.endMessage();
 }
 
-int HydroServerMQTTClient::setLastWill(const char *lastWillTopic,
-                                       const char *payload) {
+int HydroServerMQTTClient::setLastWill(const char *payload) {
   size_t payloadLength = strlen(payload);
+  char lastWillTopic[64];
+  snprintf(lastWillTopic, sizeof(lastWillTopic), "%s/%s/lwt", _sitecode,
+           _clientId);
   // to do : implement retain and qos
   _mqttClient.beginWill(lastWillTopic, payloadLength, true, 1);
   _mqttClient.print(payload);
-  _mqttClient.endWill();
+  return _mqttClient.endWill();
 }
 
 int HydroServerMQTTClient::getConnectionError() {
