@@ -1,3 +1,8 @@
+/*
+  This file is part of HydroServerArduinoClient library.
+  Sabin Panta
+*/
+
 #include "HydroServerMQTTClient.h"
 
 // primary constructor where all parameter are given
