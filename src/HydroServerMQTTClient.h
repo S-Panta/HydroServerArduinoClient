@@ -10,8 +10,6 @@
 #include <ArduinoMqttClient.h>
 #include <DataPublisher.h>
 
-extern const char *SITE_CODE;
-
 class HydroServerMQTTClient : public DataPublisher {
 public:
   static constexpr uint16_t defaultPort = 1883;
@@ -24,6 +22,14 @@ public:
                         const char *password = nullptr);
 
   HydroServerMQTTClient(Client &client);
+
+  // Sets the site code used as the first segment of the MQTT topic path
+  // for published observations and the last will message
+  // e.g "<siteCode>/<clientId>/<sensorId>/<observedProperty>/observations".
+  // Must be called before connectToBroker() / publishObservation()
+  // See site metadata detail
+  // :https://hydroserver.org/user-guides/how-to/managing-site-metadata.html#managing-site-metadata
+  void setSiteCode(const char *siteCode);
 
   // if the class is initalized without constructor
   // these functions will set mqtt configs
@@ -70,7 +76,7 @@ private:
   unsigned long _keepAliveSeconds = 60;
   unsigned long _connectionTimeout = 20;
   bool _cleanSession = false;
-  const char *_sitecode = SITE_CODE;
+  const char *_sitecode;
 };
 
 #endif

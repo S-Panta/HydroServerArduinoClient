@@ -45,8 +45,6 @@ const char* ssid = WIFI_SSID;
 const char* password = WIFI_PASS;
 const char* MQTT_BROKER = "test.mosquitto.org/";
 
-Include the site code before you initialize your library
-const char* SITE_CODE = "uwrl";
 WiFiClient wifiClient;
 HydroServerMQTTClient mqttClient(wifiClient, MQTT_BROKER);
 
@@ -73,8 +71,8 @@ void setup() {
   // The step to wifi connection differs from Arduino Uno r4 and Mayfly datalogger
   // This is only for arduino uno r4
   connectToWiFi();
-
-  mqttClient.setClientID("Arduinopublisher");
+  mqttClient.setSiteCode('uwrl');
+  mqttClient.setClientID("arduinopublisher");
   mqttClient.setLastWill("Shutting down the arduino");
 
   if (!mqttClient.connectToBroker()) {
@@ -100,5 +98,3 @@ Last will topic is in format
 ```
     <sitecode>/<clientId>/lwt 
 ```
-Make sure to predefine site code using `const char* SITE_CODE = "uwrl";` in the beginning of your code before library initialization.
-
