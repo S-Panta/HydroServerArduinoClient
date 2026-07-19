@@ -1,3 +1,8 @@
+/*
+  This file is part of HydroServerArduinoClient library.
+  Sabin Panta
+*/
+
 #include "HydroServerHTTPClient.h"
 
 HydroServerHTTPClient::HydroServerHTTPClient(Client &client,

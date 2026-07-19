@@ -1,3 +1,8 @@
+/*
+  This file is part of HydroServerArduinoClient library.
+  Sabin Panta
+*/
+
 #ifndef SRC_HYDROSERVERHTTPCLIENT_H_
 #define SRC_HYDROSERVERHTTPCLIENT_H_
 

@@ -66,19 +66,19 @@ void loop() {
  
   mqttClient.poll();
  
-  // Serial.print("loop runs  every 10 seconds");
-  // unsigned long currentMillis = millis();
-  // if (currentMillis - previousMillis >= interval) {
-  //   Serial.println("publishing every 10 second");
+  Serial.print("loop runs  every 10 seconds");
+  unsigned long currentMillis = millis();
+  if (currentMillis - previousMillis >= interval) {
+    Serial.println("publishing every 10 second");
 
-  //   float randomTemp;
-  //   randomTemp = random(200, 351) / 10.0;
-  //   previousMillis = currentMillis;
+    float randomTemp;
+    randomTemp = random(200, 351) / 10.0;
+    previousMillis = currentMillis;
       
-  //   temperature.value = randomTemp;
-  //     // phDatastream.value   = 7.2;
-  //   Serial.println(mqttClient.publishObservation(temperature,"2026-06-15T00:00:00Z"));
-  // };
+    temperature.value = randomTemp;
+      // phDatastream.value   = 7.2;
+    Serial.println(mqttClient.publishObservation(temperature,"2026-06-15T00:00:00Z"));
+  };
  delay(10000);
 
   //   // mqttClient.publishAll(datastreams, 2,  "2026-06-15T00:00:00Z");
