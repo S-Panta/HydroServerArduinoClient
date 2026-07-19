@@ -5,7 +5,7 @@ An Arduino library for publishing sensor observations. It provides two publisher
 
 
 ### Observation struct
-```json
+```cpp
     struct Observation {
     const char *observedProperty;
     const char *datastreamId;
@@ -45,6 +45,8 @@ const char* ssid = WIFI_SSID;
 const char* password = WIFI_PASS;
 const char* MQTT_BROKER = "test.mosquitto.org/";
 
+Include the site code before you initialize your library
+const char* SITE_CODE = "uwrl";
 WiFiClient wifiClient;
 HydroServerMQTTClient mqttClient(wifiClient, MQTT_BROKER);
 
