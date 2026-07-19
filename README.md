@@ -5,7 +5,7 @@ An Arduino library for publishing sensor observations. It provides two publisher
 
 
 ### Observation struct
-```
+```json
     struct Observation {
     const char *observedProperty;
     const char *datastreamId;
