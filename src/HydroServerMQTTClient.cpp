@@ -74,6 +74,10 @@ void HydroServerMQTTClient::setClientID(const char *clientId) {
   }
 }
 
+void HydroServerMQTTClient::setSiteCode(const char *siteCode) {
+  _sitecode = siteCode;
+}
+
 void HydroServerMQTTClient::setAuthentication(const char *username,
                                               const char *password) {
   // some MQTT broker allows password field to be empty
@@ -171,6 +175,7 @@ String HydroServerMQTTClient::messageTopic() {
   return _mqttClient.messageTopic();
 }
 
+// to:do multiple publish at same time
 // void HydroServerMQTTClient::publishAll(DataStream** datastreams , uint8_t
 // count, const char* phenomenonTime){
 //     for (uint8_t i = 0; i < count; i++) {

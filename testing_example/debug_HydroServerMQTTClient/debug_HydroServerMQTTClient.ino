@@ -49,7 +49,8 @@ void setup() {
   connectWiFi();
   
   Serial.println("connecting to broker");
-
+  
+  mqttClient.setSiteCode("uwrl");
   mqttClient.setClientID("Arduinopublisher");
   mqttClient.setLastWill("Shutting down the arduion");
 
