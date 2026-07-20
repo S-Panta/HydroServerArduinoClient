@@ -174,15 +174,3 @@ String HydroServerMQTTClient::readMessage() {
 String HydroServerMQTTClient::messageTopic() {
   return _mqttClient.messageTopic();
 }
-
-// to:do multiple publish at same time
-// void HydroServerMQTTClient::publishAll(DataStream** datastreams , uint8_t
-// count, const char* phenomenonTime){
-//     for (uint8_t i = 0; i < count; i++) {
-//         publishObservation(
-//             datastreams[i]->datastreamId,
-//             datastreams[i]->value,
-//             phenomenonTime
-//         );
-//     }
-// }
