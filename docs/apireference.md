@@ -110,7 +110,7 @@ Sets the MQTT client identifier used on connect.
 
 **Parameters**
 
-- `clientId` — the client ID string; ignored if `nullptr`
+- `clientId` — the client ID string; ignored if `nullptr`. Lowercase client id is preferred as it will be used to build mqtt messahe publish topic.
 
 ---
 
@@ -176,14 +176,24 @@ Sets how long to wait for the broker connection to establish.
 Publishes a single observation, formatted per the OGC
 SensorThings API.
 
-    int publishObservation(const char* datastreamId, double observation, const char* phenomenonTime)
+    int publishObservation(const Observation &observation, const char* phenomenonTime)
 
 **Parameters**
 
-- `datastreamId` — UUID of the target SensorThings Datastream
-- `observation` — the measured value
-- `phenomenonTime` — ISO 8601 timestamp of when the observation was
-  taken
+- `Observation` — Observation struct of SensorThings Datastream defined in DataPublisher class.
+  ```
+      struct Observation {
+      const char *observedProperty;
+      const char *datastreamId;
+      const char *sensorId;
+      double value = 0.0;
+    };
+  ```
+    - observedProperty : Name or URI of the property being observed
+    - datastreamId : ID of the SensorThings Datastream this observation belongs to
+    - sensorId : ID of the sensor that produced the observation
+    - value : Measured value of the observation (default: 0.0)
+- `phenomenonTime` — ISO 8601 timestamp of when the observation was taken
 
 Builds a JSON payload (`phenomenonTime`, `result`,
 `Datastream.@iot.id`) and publishes it to a topic derived from the
@@ -220,17 +230,27 @@ publish failures are not surfaced — this method does not return a
 status.
 
 ---
+### `setSiteCode()`
+
+```
+void setSiteCode(const char *siteCode);
+```
+
+Sets the site code used as the first segment of the MQTT topic path for published observations and for the last will message, e.g. <siteCode>/<clientId>/<sensorId>/<observedProperty>/observations.
+
+**Parameters**
+- siteCode : Site code identifying the deployment location
+
+---
 
 ### `setLastWill()`
 
 Registers a Last Will and Testament message with the broker.
 
-    int setLastWill(const char* lastWillTopic, const char* payload)
+    int setLastWill(const char* payload)
 
 **Parameters**
 
-- `lastWillTopic` — topic the broker will publish to if this client
-  disconnects ungracefully
 - `payload` — the will message content
 
 The broker publishes this message automatically if the client fails
@@ -238,9 +258,7 @@ to send a clean disconnect and the keep-alive interval elapses.
 
 **Returns**
 
-- Declared as `int`, but the current implementation does not return
-  a value — treat as `void` until this is corrected, and do not rely
-  on a return value to confirm the will was registered successfully
+- Declared as `int`
 
 ---
 
@@ -262,7 +280,7 @@ Subscribes to a topic.
 - Otherwise, the result of the underlying subscribe call
 
 **Note:** subscribes at QoS 0 by default; there is currently no
-parameter to request QoS 1/2 on subscribe.
+parameter to request QoS 1 and QoS 2 on subscribe.
 
 ---
 
