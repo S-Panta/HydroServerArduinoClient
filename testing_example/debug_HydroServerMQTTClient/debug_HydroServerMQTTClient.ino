@@ -1,28 +1,21 @@
 #include "arduino_secrets.h"
-const char* ssid = WIFI_SSID;
-const char* password = WIFI_PASS;
+const char* ssid = "USU-guest";
+const char* password = 0;
 
-
-const char* MQTT_BROKER = "192.168.0.101";
-const int MQTT_PORT = 1883;
-
-
+const char* MQTT_BROKER = "144.39.67.171";
 
 const long interval = 10000;
 unsigned long previousMillis = 0;
-
-const char* SITE_CODE = "uwrl";
 
 #include <WiFiS3.h>
 #include <HydroServerMQTTClient.h>
 WiFiClient wifiClient;
 HydroServerMQTTClient mqttClient(wifiClient, MQTT_BROKER);
 
-const char* datastreamId = "019eae3f-3450-70db-b5d2-a55879b4d681";
-// DataStream phDatastream   = { "pH",          "uuid-ph",         };
+Observation temperature = { "temperature", "uuidtemperature","tempsensorid"};
+Observation ph = {"pH","uuidPh","phsensorid"};
 
-Observation temperature = { "temperature", "uuidtemperature","tempsensor"};
-// DataStream* datastreams[] = { &tempDatastream, &phDatastream };
+Observation *observations[] = { &temperature, &ph };
 
 void connectWiFi() {
   delay(2000);
@@ -47,12 +40,10 @@ void setup() {
   delay(1000);
   Serial.println("running sketch mqtt_basic.ino");
   connectWiFi();
-  
   Serial.println("connecting to broker");
-  
+
   mqttClient.setSiteCode("uwrl");
   mqttClient.setClientID("Arduinopublisher");
-  mqttClient.setLastWill("Shutting down the arduion");
 
   if(!mqttClient.connectToBroker()){
     Serial.println("connection not successful.Connection Error is ");
@@ -72,25 +63,18 @@ void loop() {
   if (currentMillis - previousMillis >= interval) {
     Serial.println("publishing every 10 second");
 
-    float randomTemp;
+    float randomTemp,randomPh;
     randomTemp = random(200, 351) / 10.0;
+    randomPh = random(1,7);
     previousMillis = currentMillis;
       
     temperature.value = randomTemp;
-      // phDatastream.value   = 7.2;
-    Serial.println(mqttClient.publishObservation(temperature,"2026-06-15T00:00:00Z"));
-  };
- delay(10000);
+    ph.value = randomPh;
 
-  //   // mqttClient.publishAll(datastreams, 2,  "2026-06-15T00:00:00Z");
-  //   // mqttClient.publishObservation(
-  //   //   datastreamId, 
-  //   //   25.5,
-  //   //   "2026-06-15T00:00:00Z"
-  //   // );
-  //   Serial.println("delay for 5 second");
-    // // if retain = true
-    // // broker logs changes
-    // // publish every 5 seconds
-  // }
+    uint8_t size = sizeof(observations)/sizeof(observations[0]);
+    mqttClient.publishAll(observations,size,"2026-06-15T00:00:00Z");
+    Serial.println(temperature.value);
+    Serial.println(ph.value);
+    };
+  delay(10000);
 }

@@ -30,13 +30,14 @@ protected:
   }
 
 public:
-  // both http and mqtt publisher must implement this
+  // both HydroServerHTTPClient and HydroServerMQTTClient must implement this
   virtual int publishObservation(const Observation &observation,
                                  const char *phenomenonTime);
 
-  virtual void publishAll(Observation **observations, uint8_t count,
-                          const char *phenomenonTime) {
-    for (uint8_t i = 0; i < count; i++) {
+  // only HydroServerMQTTClient does patch publishing
+  void publishAll(Observation **observations, uint8_t size,
+                  const char *phenomenonTime) {
+    for (uint8_t i = 0; i < size; i++) {
       publishObservation(*observations[i], phenomenonTime);
     }
   }

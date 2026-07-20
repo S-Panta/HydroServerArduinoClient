@@ -31,63 +31,11 @@ Both client will publish the observation into same JSON format.
         "phenomenonTime": "<phenomenonTime>"
     }
 ```
-### Installation
+### Quick Start for HydroServerMQTTClient
 Clone the library and copy entire folder into `Arduino/libraries`.
 For testing the library, you can use free mosquitto broker available online `https://test.mosquitto.org/`.
 Make sure to subscribe to the topic that you published to. Because this is commercially available, subscribing to all published topic using wildcard ("#") will result in getting all published message in the broker.
-
-### Quick Start for HydroServerMQTTClient
-```cpp
-#include <WiFiS3.h>
-#include <HydroServerMQTTClient.h>
-
-const char* ssid = WIFI_SSID;
-const char* password = WIFI_PASS;
-const char* MQTT_BROKER = "test.mosquitto.org/";
-
-WiFiClient wifiClient;
-HydroServerMQTTClient mqttClient(wifiClient, MQTT_BROKER);
-
-Observation temperature = { "temperature", "uuidtemperature", "tempsensor" };
-
-void connectToWiFi() {
-  WiFi.begin(ssid, password);
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    while(1);
-  }
-  Serial.println("\nWiFi connected!");
-  // some time requires for DHCP to assign IP
-  delay(5000);
-  // IP address if not 0.0.0.0 means the device is connected to wifi
-  Serial.print("IP Address: ");
-  Serial.println(WiFi.localIP());
-}
-
-void setup() {
-  Serial.begin(115200);
-
-  // connect to WiFi (see connectWiFi() in example sketch). 
-  // The step to wifi connection differs from Arduino Uno r4 and Mayfly datalogger
-  // This is only for arduino uno r4
-  connectToWiFi();
-  mqttClient.setSiteCode('uwrl');
-  mqttClient.setClientID("arduinopublisher");
-  mqttClient.setLastWill("Shutting down the arduino");
-
-  if (!mqttClient.connectToBroker()) {
-    Serial.println(mqttClient.getConnectionError());
-    while (1);
-  }
-}
-
-void loop() {
-  mqttClient.poll();
-  temperature.value = 25.5;
-  mqttClient.publishObservation(temperature, "2026-06-15T00:00:00Z");
-  delay(10000);
-}
-```
+Look at `examples/Uno_mqtt_basic` for simple example on how to use HydroServerMQTTClient for publishing message to broker.
 
 ### Topic Structure
 The library will automatically create topic for each observation and Last will based on the site id, client id and observation struct provided by the user. The topic for observation is in format 
