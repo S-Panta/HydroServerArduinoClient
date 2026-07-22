@@ -53,11 +53,19 @@ void setup() {
 // sendATCommand("AT+CIPMUX?");
 // sendATCommand("AT+CIPSTATUS");
 // sendATCommand("AT+CMD?");
-sendATCommand("AT+CIPSTA?");
-delay(2000);
-sendATCommand("AT+CIPSTART=\"TCP\",\"192.168.0.103\",1883");
-sendATCommand("AT+CIPMODE?");
-sendATCommand("AT+PING=\"192.168.0.103\"");
+// sendATCommand("AT+CIPSTA?");
+// delay(2000);
+sendATCommand("AT+CIPRECVMODE?");
+sendATCommand("AT+CIPMUX?");
+// sendATCommand("AT+GMR");
+// sendATCommand("AT+CIPMUX=1");
+// sendATCommand("AT+CIPMUX?");
+// sendATCommand("AT+CIPSTART=0,\"TCP\",\"test.mosquitto.org\",1883");
+// // sendATCommand("AT+CIPSTART=\"TCP\",\"test.mosquitto.org\",1883");
+// sendATCommand("AT+CIPSTATUS");
+// sendATCommand("AT+CIPMODE?");
+// sendATCommand("AT+PING=\"192.168.0.103\"");
+// sendATCommand("AT+CIPSTAMAC?");
 
   // sendATCommand("AT+GMR");
   // sendATCommand("AT+CWMODE?");
