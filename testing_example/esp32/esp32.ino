@@ -64,7 +64,15 @@ void setup() {
     while (1);
   };
 
-  Serial.println("connection successful");  
+  Serial.println("connection successful");
+
+  // initialize your sensor
+  if (!sht4.begin()) {
+        Serial.println("SHT4x sensor not found. Exiting..");
+        while (1);
+    }
+  sht4.setPrecision(SHT4X_HIGH_PRECISION);
+  sht4.setHeater(SHT4X_NO_HEATER);     
 }
 
 
