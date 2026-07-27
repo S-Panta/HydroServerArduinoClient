@@ -7,7 +7,7 @@
 const char* ssid = WIFI_SSID;
 const char* password = WIFI_PASS;
 
-
+Observation streamTemperature;
 // Using this, be very distinctive about the topic, client id so that you wouldn't get others message
 // Any broker running over TCP port 1883
 const char* MQTT_BROKER   = "mqtt3.thingspeak.com"; 
@@ -46,16 +46,21 @@ void setup() {
     while (1);
   };
   Serial.println("connection successful");
-  mqttClient.subscribe("rainfall");
+  streamTemperature.observedProperty = "Temperature";
+  streamTemperature.datastreamId = "uuid-temperature";
+
+  mqttClient.setKeepAliveInterval(150000UL);
+  mqttClient.setClientID("mayfly-enlab");
+  mqttClient.setSiteCode("urwl");
 }
 
 void loop() {
   // poll is necessary so as to fire the callback
   mqttClient.poll();
   Serial.println("listening message");
+  streamTemperature.value = 123
    mqttClient.publishObservation(
-    "12345", 
-    25.5,
+    streamTemperature,
     "2026-06-15T00:00:00Z"
   );
   // // publish every 5 seconds
