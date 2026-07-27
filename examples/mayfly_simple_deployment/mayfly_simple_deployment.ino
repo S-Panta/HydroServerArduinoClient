@@ -12,7 +12,10 @@
 
 // for debug
 // #define TINY_GSM_DEBUG Serial
-
+// for mayfly, it is recommended to use hostname
+// if ip is used, the ip should be updated in DL using xctu
+// const char* MQTT_BROKER   = "54.36.178.49"; 
+// const char* MQTT_BROKER   = "broker.hivemq.com"; 
 const char *MQTT_BROKER = "raspberrypi1.mypc.usu.edu";
 
 // uncomment this to see debug from TinyGSM client
