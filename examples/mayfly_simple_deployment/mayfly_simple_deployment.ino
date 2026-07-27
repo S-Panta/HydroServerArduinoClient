@@ -20,8 +20,6 @@ const char *MQTT_BROKER = "raspberrypi1.mypc.usu.edu";
 // StreamDebugger debugger(XbeeSerial, Serial);
 // TinyGsm        modem(debugger);
 
-const char *SITE_CODE = "uwrl";
-
 // initialize client
 TinyGsm modem(XbeeSerial);
 TinyGsmClient client(modem);
@@ -87,6 +85,7 @@ void setup() {
 
   mqttClient.setKeepAliveInterval(150000UL);
   mqttClient.setClientID("mayfly-enlab");
+  mqttClient.setSiteCode("urwl");
   if (!mqttClient.connectToBroker()) {
     Serial.println("Cannot connect to Broker. Connection Error is ");
     Serial.println(mqttClient.getConnectionError());

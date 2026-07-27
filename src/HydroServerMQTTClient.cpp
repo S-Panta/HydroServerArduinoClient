@@ -15,7 +15,8 @@ HydroServerMQTTClient::HydroServerMQTTClient(Client &client, const char *broker,
       // assigned their initialize value here
       _mqttClient(client), _port(port), _broker(broker),
       // These arguments are optional and therefore assigned nullptr
-      _clientId(nullptr), _username(nullptr), _password(nullptr) {
+      _clientId(nullptr), _username(nullptr), _password(nullptr),
+      _sitecode(nullptr) {
 
   setClientID(clientId);
   setAuthentication(username, password);
@@ -108,10 +109,13 @@ int HydroServerMQTTClient::publishObservation(const Observation &observation,
   // topic construction is of format
   // “sitecode/datalogger/observedproperty/observations”
   char topic[128];
+  // if all values of this topic is not initalized, broker will response with
+  // malformed packet and mqtt connection will be terminated the first part
+  // _sitecode should be valid, if not valid, no topic will form. other value
+  // can be empty and mqtt works but not recommended
   snprintf(topic, sizeof(topic), "%s/%s/%s/%s/observations", _sitecode,
            _clientId, observation.sensorId, observation.observedProperty);
   _mqttClient.beginMessage(topic, (unsigned long)payload.length());
-
   _mqttClient.print(payload);
   // only under qos 1 and 2 will return code from endmessage be 0 when message
   // sending fails Under qos 0, return code will remain 1 which could be
