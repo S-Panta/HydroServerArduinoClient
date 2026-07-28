@@ -128,13 +128,16 @@ void setup() {
   connectWiFi();
   Serial.println("powering the modem");
 
-  Serial.println("setting up rtc");
-  modem.NTPServerSync("pool.ntp.org");
+  // Serial.println("setting up rtc");
+  // modem.NTPServerSync("pool.ntp.org");
 
-  modem.waitForTimeSync();
-  getNetworkTime();
+  // modem.waitForTimeSync();
+  // getNetworkTime();
+
   // This is important to make sure your mqtt works with esp32
-  sendATCommand("AT+CIPRECVMODE=1");
+  // sendATCommand("AT+CIPRECVMODE=1");
+  modem.sendAT(GF("+CIPRECVMODE=1"));
+  Serial.println("passive mode done");
 
   streamTemperature.observedProperty = "Temperature";
   streamTemperature.datastreamId = "uuid-temperature";
