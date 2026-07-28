@@ -55,11 +55,15 @@ void setup() {
 }
 
 void loop() {
+  mqttClient.poll();
   RTCTime currentTime;
   RTC.getTime(currentTime);
+  Serial.println("publishing measurement");
 
-  Serial.print("RTC Date & Time: ");
-  Serial.println(getISO8601Time(currentTime));
+  float temperature;
+  temperature = random(20, 30);
+  streamTemperature.value = temperature;
 
-  delay(1000);
+  mqttClient.publishObservation(streamTemperature, getISO8601Time(currentTime));
+  delay(10000);
 }

@@ -22,11 +22,11 @@ const char *MQTT_BROKER = "raspberrypi1.mypc.usu.edu";
 // const char *MQTT_BROKER = "192.168.0.101";
 const int32_t modemBaud = 57600;
 
-#include <StreamDebugger.h>
-StreamDebugger debugger(Serial1, Serial);
-TinyGsm modem(debugger);
+// #include <StreamDebugger.h>
+// StreamDebugger debugger(Serial1, Serial);
+// TinyGsm modem(debugger);
 
-// TinyGsm modem(XbeeSerial);
+TinyGsm modem(XbeeSerial);
 TinyGsmClient client(modem);
 
 HydroServerMQTTClient mqttClient(client, MQTT_BROKER);
@@ -92,7 +92,7 @@ void connectWiFi() {
 
   // sendATCommand("AT+CIPMUX=1");
   // delay(2000);
-  // sendATCommand("AT+CIPRECVMODE?");
+  sendATCommand("AT+CIPRECVMODE?");
   // This is important to make sure your mqtt works with esp32
   // sendATCommand("AT+CIPRECVMODE=1");
   // Serial.println("the firmware set to passive");
