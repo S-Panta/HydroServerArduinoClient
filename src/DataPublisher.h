@@ -32,9 +32,9 @@ protected:
 public:
   // both HydroServerHTTPClient and HydroServerMQTTClient must implement this
   virtual int publishObservation(const Observation &observation,
-                                 const char *phenomenonTime);
+                                 const char *phenomenonTime) = 0;
 
-  // only HydroServerMQTTClient does patch publishing
+  // todo: status of multiple publish should be stored somewhere
   void publishAll(Observation **observations, uint8_t size,
                   const char *phenomenonTime) {
     for (uint8_t i = 0; i < size; i++) {

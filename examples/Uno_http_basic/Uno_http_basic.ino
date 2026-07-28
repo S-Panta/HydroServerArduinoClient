@@ -11,27 +11,31 @@ const unsigned long postInterval = 20000;
 int currentHour = 3;
 
 // // for playground
-// const char *apiKey = PLAYGROUND_API_KEY;
-// const char *datastreamId = "019f246b-c5b9-7b45-aac6-261adc526b55";
-// const char *serverAddress = "playground.hydroserver.org";
-// const int serverPort = 443;
+const char *apiKey = PLAYGROUND_API_KEY;
+const char *datastreamId = "019f246b-c5b9-7b45-aac6-261adc526b55";
+const char *serverAddress = "playground.hydroserver.org";
+const int serverPort = 443;
 
 // for local
-const char *serverAddress = "144.39.67.171";
-const int serverPort = 80;
-const char *apiKey = LOCAL_API_KEY;
-const char *datastreamId = "019eae3f-3450-70db-b5d2-a55879b4d681";
+// const char *serverAddress = "144.39.67.171";
+// const int serverPort = 80;
+// const char *apiKey = LOCAL_API_KEY;
+// const char *datastreamId = "019eae3f-3450-70db-b5d2-a55879b4d681";
 
 // for playground instance
-// WiFiClient wifiClient;
-// WiFiSSLClient sslClient;
-// HydroServerHTTPClient hsClient(sslClient, serverAddress, serverPort);
+WiFiClient wifiClient;
+WiFiSSLClient sslClient;
+HydroServerHTTPClient hsClient(sslClient, serverAddress, serverPort);
 
 // for local instance
-WiFiClient wifiClient;
-HydroServerHTTPClient hsClient(wifiClient, serverAddress, serverPort);
+// WiFiClient wifiClient;
+// HydroServerHTTPClient hsClient(wifiClient, serverAddress, serverPort);
 
 Observation temperature = {"Temperature", datastreamId};
+const char *streamTempDataStreamId = "019fa988-631d-7dc1-886f-b80431339ff7";
+Observation streamTemperature = {"StreamTemperature", streamTempDataStreamId};
+
+Observation *observations[] = {&temperature, &streamTemperature};
 
 // for arduino uno
 void connectWiFi() {
@@ -53,7 +57,7 @@ void connectWiFi() {
 
 String getNextTimestampISO8601() {
   char buffer[25];
-  snprintf(buffer, sizeof(buffer), "2026-07-16T%02d:59:43Z", currentHour);
+  snprintf(buffer, sizeof(buffer), "2026-07-17T%02d:59:43Z", currentHour);
   currentHour = (currentHour + 1) % 24;
   return String(buffer);
 }
@@ -69,15 +73,21 @@ void setup() {
   hsClient.setApiKey(apiKey);
   Serial.println("Hydroserver client is set up");
   Serial.println("posting to hydroserver");
-  double randomValue = random(0, 3000) / 10.0;
-  String timestamp = getNextTimestampISO8601();
-  temperature.value = randomValue;
-
-  int status = hsClient.publishObservation(temperature, timestamp.c_str());
-  Serial.println(status);
-  Serial.println(randomValue);
-
-  Serial.print(hsClient.getResponseBody());
 }
 
-void loop() {}
+void loop() {
+  Serial.println("publishing the value");
+  double randomValue = random(0, 3000) / 10.0;
+  double streamTempRandom = random(10, 20);
+  String timestamp = getNextTimestampISO8601();
+  temperature.value = randomValue;
+  streamTemperature.value = streamTempRandom;
+  uint8_t size = sizeof(observations) / sizeof(observations[0]);
+
+  hsClient.publishAll(observations, size, timestamp.c_str());
+  Serial.println(timestamp);
+  // int status = hsClient.publishObservation(temperature, timestamp.c_str());
+  // Serial.println(status);
+  // Serial.println(randomValue);
+  delay(6000);
+}
