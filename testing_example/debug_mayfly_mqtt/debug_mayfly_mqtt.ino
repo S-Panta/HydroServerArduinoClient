@@ -1,16 +1,28 @@
 #define XbeeSerial Serial1
 #define XbeePower 18
 
-#include <HydroServerMQTTClient.h>
+// #include <HydroServerMQTTClient.h>
 const char *MQTT_BROKER = "raspberrypi1.mypc.usu.edu";
+// #define TINY_GSM_MODEM_XBEE
 
-#include <modems/DigiXbee.h>
+// wifi details
+const char *wifiId = "USU-guest";
+const char *wifiPwd = 0;
 
-DigiXbee xbee(XbeeSerial);
-// HydroServerMQTTClient mqttClient(
-//     *xbee.createClient(),
-//     MQTT_BROKER
-// );
+#include <HydroServerMQTTClient.h>
+// #include <TinyGsmClient.h>
+// #define TINY_GSM_USE_WIFI true
+
+// #include <modems/DigiXbeeS6B.h>
+
+#include <modems/ExpressifESP32.h>
+
+
+ExpressifESP32 xbee(XbeeSerial,XbeePower);
+HydroServerMQTTClient mqttClient(
+    *xbee.createClient(),
+    MQTT_BROKER
+);
 
 const char *datastreamId = "019eae3f-3450-70db-b5d2-a55879b4d681";
 Observation streamTemperature;
@@ -48,16 +60,20 @@ void setup() {
 
   Serial.begin(115200);
   delay(2000);
-  pinMode(XbeePower, OUTPUT);
-  digitalWrite(XbeePower, HIGH);
-  delay(2000);
-
+  // XbeeSerial.begin(9600);
+  XbeeSerial.begin(57600);
   Serial.print("Running sketch ");
   // __FILE__ prints full path so need to extract filename from that path
   Serial.println(__builtin_strrchr(__FILE__, '/') + 1);
+  // xbee.powerUp();
+  if (!xbee.connectToInternet(wifiId, wifiPwd)) {
+    Serial.println("Connection failed");
+  } else {
+    Serial.println("Wifi is connected");
+  }
 
-  XbeeSerial.begin(9600);
-  delay(3000);
+  delay(2000);
+  Serial.println(xbee.getNISTTime());
 
   // connectToWifi();
   // streamTemperature.observedProperty = "Temperature";
@@ -90,6 +106,8 @@ void setup() {
 }
 
 void loop() {
+  Serial.println("printing");
+  delay(5000);
   // mqttClient.poll();
   // sensors_event_t humidity, temp;
 

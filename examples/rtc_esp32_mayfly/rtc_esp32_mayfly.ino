@@ -18,8 +18,8 @@ HydroServerMQTTClient mqttClient(client, MQTT_BROKER);
 
 #include "Sodaq_DS3231.h"
 
-const char *ssid = WIFI_SSID;
-const char *password = WIFI_PASS;
+const char *ssid = "USU-guest";
+const char *password = 0;
 
 String sendATCommand(String cmd, uint32_t timeout_ms = 2000) {
   while (XbeeSerial.available()) {
@@ -50,6 +50,22 @@ String sendATCommand(String cmd, uint32_t timeout_ms = 2000) {
   Serial.println("....................................");
 
   return response;
+}
+
+void getTimestamp() {
+  String response = sendATCommand("AT+SYSTIMESTAMP?");
+
+  int index = response.indexOf("+SYSTIMESTAMP:");
+
+  if (index >= 0) {
+    int start = index + strlen("+SYSTIMESTAMP:");
+    int end = response.indexOf("\r\n", start);
+
+    String timestamp = response.substring(start, end);
+
+    Serial.print("Unix timestamp = ");
+    Serial.println(timestamp);
+  }
 }
 
 void connectWiFi() {
@@ -124,47 +140,58 @@ void setup() {
   delay(2000);
   XbeeSerial.begin(57600);
   modem.init();
+
   delay(3000);
   connectWiFi();
   Serial.println("powering the modem");
 
-  // Serial.println("setting up rtc");
-  // modem.NTPServerSync("pool.ntp.org");
+  Serial.println("setting up rtc");
+  modem.NTPServerSync("pool.ntp.org");
 
-  // modem.waitForTimeSync();
-  // getNetworkTime();
+  // this function waits for 120 seconds by defaults
+  modem.waitForTimeSync(30);
+  // modem.getGSMDateTime(TinyGSMDateTimeFormat::DATE_FULL);
+  uint32_t epoch = modem.getNetworkEpoch();
+
+  Serial.print("Unix epoch: ");
+  Serial.print(epoch);
+  Serial.println("........................................");
+  Serial.println("look up");
+  // modem.getGSMDateTime();
+  Serial.println("........................................");
+
+  getNetworkTime();
 
   // This is important to make sure your mqtt works with esp32
-  // sendATCommand("AT+CIPRECVMODE=1");
-  modem.sendAT(GF("+CIPRECVMODE=1"));
-  Serial.println("passive mode done");
+  // modem.sendAT(GF("+CIPRECVMODE=1"));
+  // Serial.println("passive mode done");
 
-  streamTemperature.observedProperty = "Temperature";
-  streamTemperature.datastreamId = "uuid-temperature";
-  streamTemperature.sensorId = "temp-sensor";
-  mqttClient.setClientID("mayfly-enlab-test");
-  // make sure to provide sitecode or else mqtt willnot work
-  mqttClient.setSiteCode("urwl");
-  Serial.println("Connecting to broker");
-  if (!mqttClient.connectToBroker()) {
-    Serial.println("Cannot connect to Broker. Connection Error is ");
-    Serial.println(mqttClient.getConnectionError());
-    // it make no sense to work further when connection to broker is not
-    // successful
-    while (1)
-      ;
-  };
-  Serial.println("Connection to Broker Successful");
+  // streamTemperature.observedProperty = "Temperature";
+  // streamTemperature.datastreamId = "uuid-temperature";
+  // streamTemperature.sensorId = "temp-sensor";
+  // mqttClient.setClientID("mayfly-enlab-test");
+  // // make sure to provide sitecode or else mqtt willnot work
+  // mqttClient.setSiteCode("urwl");
+  // Serial.println("Connecting to broker");
+  // if (!mqttClient.connectToBroker()) {
+  //   Serial.println("Cannot connect to Broker. Connection Error is ");
+  //   Serial.println(mqttClient.getConnectionError());
+  //   // it make no sense to work further when connection to broker is not
+  //   // successful
+  //   while (1)
+  //     ;
+  // };
+  // Serial.println("Connection to Broker Successful");
 }
 
 void loop() {
   Serial.println("publishing measurement");
-  mqttClient.poll();
-  float temperature;
-  temperature = random(20, 30);
-  streamTemperature.value = temperature;
+  // mqttClient.poll();
+  // float temperature;
+  // temperature = random(20, 30);
+  // streamTemperature.value = temperature;
 
-  // mqttClient.publishObservation(streamTemperature,"2026-06-07T14:30:00Z");
-  mqttClient.publishObservation(streamTemperature, getISO8601Time());
+  // // mqttClient.publishObservation(streamTemperature,"2026-06-07T14:30:00Z");
+  // mqttClient.publishObservation(streamTemperature, getISO8601Time());
   delay(10000);
 }
