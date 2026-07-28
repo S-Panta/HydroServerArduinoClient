@@ -2,6 +2,10 @@
 #define XbeeSerial Serial1
 #define XBEE_PWR 18
 #define TINY_GSM_USE_WIFI true
+#include "arduino_secrets.h"
+
+const char *wifiId = WIFI_SSID;
+const char *wifiPwd = WIFI_PASS;
 
 #include <HydroServerMQTTClient.h>
 #include <TinyGsmClient.h>
@@ -14,21 +18,20 @@ HydroServerMQTTClient mqttClient(client, MQTT_BROKER);
 
 #include "Sodaq_DS3231.h"
 
-const char *ssid = "USU-guest";
-const char *password = NULL;
-
 void connectWiFi() {
   Serial.println("connecting to wifi");
-  if (!modem.networkConnect(ssid, password) && modem.waitForNetwork()) {
+  Serial.println(wifiId);
+  Serial.println(wifiPwd);
+  if (!modem.networkConnect(wifiId, wifiPwd)) {
     Serial.println("wifi is not connected");
   }
-
   Serial.println("Wifi is connected");
-
-  if (modem.isNetworkConnected()) {
-    Serial.println("Network connected");
+  if (!modem.waitForNetwork()) {
+    Serial.println("Wifi is not connected");
+    delay(10000);
+    while (1)
+      ;
   }
-
   Serial.print("Local IP: ");
   Serial.println(modem.localIP());
 }
@@ -54,28 +57,34 @@ void setup() {
   delay(3000);
   connectWiFi();
   // 132, 163, 97, 1
-  bool connected = client.connect("132.163.97.1", 37);
-  client.println('!');
-  delay(5000);
-  if (client.available() >= 4) {
-    uint8_t buffer[4]; // Array declaration
-    client.readBytes(buffer, 4);
-    client.stop();
-    uint32_t ntpTime = ((uint32_t)buffer[0] << 24) |
-                       ((uint32_t)buffer[1] << 16) |
-                       ((uint32_t)buffer[2] << 8) | (uint32_t)buffer[3];
-    uint32_t unixTime = ntpTime - 2208988800UL;
-    // DS3231 chip give the number of seconds since January 1, 2000
-    // Unix Time, which is the number of seconds since 1/1/1970
-    // https://www.envirodiy.org/ds3231-real-time-clock-rtc-date-conversion/
-    DateTime dt(unixTime - 946684800UL);
-    rtc.begin();
-    rtc.setDateTime(dt);
-    Serial.println("datetime server setting completed");
-  }
+  Serial.println("Connecting to time server");
+  bool connected = timeClient.connect("132.163.97.1", 37);
+  if (connected) {
+    timeClient.println('!');
+    delay(5000);
+    if (timeClient.available() >= 4) {
+      uint8_t buffer[4]; // Array declaration
+      timeClient.readBytes(buffer, 4);
+      timeClient.stop();
+      uint32_t ntpTime = ((uint32_t)buffer[0] << 24) |
+                         ((uint32_t)buffer[1] << 16) |
+                         ((uint32_t)buffer[2] << 8) | (uint32_t)buffer[3];
+      uint32_t unixTime = ntpTime - 2208988800UL;
+      // DS3231 chip give the number of seconds since January 1, 2000
+      // Unix Time, which is the number of seconds since 1/1/1970
+      // https://www.envirodiy.org/ds3231-real-time-clock-rtc-date-conversion/
+      DateTime dt(unixTime - 946684800UL);
+      rtc.begin();
+      rtc.setDateTime(dt);
+      Serial.println("datetime server setting completed");
+    }
 
-  client.stop();
-  delay(3000);
+    timeClient.stop();
+    delay(3000);
+
+  } else {
+    Serial.println("Client couldn't connect to time server");
+  }
   // if (client.connected()) {
   //   Serial.println("Still connected");
   // } else {
@@ -88,6 +97,7 @@ void setup() {
   mqttClient.setClientID("mayfly-enlab");
   // make sure to provide sitecode or else mqtt willnot work
   mqttClient.setSiteCode("urwl");
+  Serial.println("Connecting to broker");
   if (!mqttClient.connectToBroker()) {
     Serial.println("Cannot connect to Broker. Connection Error is ");
     Serial.println(mqttClient.getConnectionError());
