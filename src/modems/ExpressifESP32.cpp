@@ -19,13 +19,12 @@ Client* ExpressifESP32::createSecureClient()
 bool ExpressifESP32::connectToInternet(const char* ssid, const char* password ,uint32_t maxConnectionTime){
     // make sure the modem was powered on first
     powerUp();
+    // This does some configuration in the Esp32 modem
     _modem.init();
  
     if (!_modem.networkConnect(ssid, password)) {
-        Serial.println("is this returning false??");
         return false;
     }
-    Serial.println("no the networkConnect is working fine");
 
     // this checks whether local IP and DNS have been allocated
     // and not 0.0.0.0
@@ -45,6 +44,7 @@ bool ExpressifESP32::isInternetAvailable(){
     return _modem.isNetworkConnected();
 }
 
+// returns time in utc
 uint32_t ExpressifESP32::getNISTTime(){
     // opens UDP socket for time server
     // by default, the time server is pool.ntp.org.
@@ -53,4 +53,12 @@ uint32_t ExpressifESP32::getNISTTime(){
     // this function waits for 120 seconds by defaults
     _modem.waitForTimeSync(30);
     uint32_t epoch = _modem.getNetworkEpoch(TinyGSM_EpochStart::UNIX);
+    
+    // Mayfly logger has Onboard realtime clock (RTC) (DS3231)
+    // DS3231 chip give the number of seconds since January 1, 2000
+    // Unix Time, which is the number of seconds since 1/1/1970
+    // https://www.envirodiy.org/ds3231-real-time-clock-rtc-date-conversion/
+    // DateTime dt(unixTime - 946684800UL);
+    uint32_t currentdateTime = epoch - 946684800UL;
+    return currentdateTime;
 }

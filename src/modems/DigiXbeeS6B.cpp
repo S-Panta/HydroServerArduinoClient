@@ -44,13 +44,16 @@ bool DigiXbeeS6B::isInternetAvailable(){
     return _modem.isNetworkConnected();
 }
 
+// returns time in utc
 uint32_t DigiXbeeS6B::getNISTTime(){
     if(!isInternetAvailable()){
         return 0;
     }
+    //the IP address of time-[a,b,c,d]-wwv.nist.gov.
+    // xbee can't open udp and tcp at the same time. So tcp connection should be opened.
+    // tcp is needed for http/mqtt connection
     const char *nistIP = "132.163.97.1";
-    //the IP address of time-[a,b,c,d]-wwv.nist.gov
-    // xbee can't open udp. So tcp connection should be opened
+    
     Client *client = createClient();
     // sets up the tcp connection
     bool connected = client->connect(nistIP, NIST_PORT);
@@ -70,13 +73,18 @@ uint32_t DigiXbeeS6B::getNISTTime(){
             uint32_t ntpTime = ((uint32_t)buffer[0] << 24) |
                          ((uint32_t)buffer[1] << 16) |
                          ((uint32_t)buffer[2] << 8) | (uint32_t)buffer[3];
-            
+            // NTP time counts seconds since 1900-01-01 00:00:00 UTC.
+            // Unix time counts seconds since 1970-01-01 00:00:00 UTC.
+            // The difference between those two epochs is 2208988800 seconds.
             uint32_t unixTime = ntpTime - 2208988800UL;
-            return unixTime;
+
+            // Mayfly logger has Onboard realtime clock (RTC) (DS3231)
             // DS3231 chip give the number of seconds since January 1, 2000
             // Unix Time, which is the number of seconds since 1/1/1970
             // https://www.envirodiy.org/ds3231-real-time-clock-rtc-date-conversion/
             // DateTime dt(unixTime - 946684800UL);
+            uint32_t currentdateTime = unixTime - 946684800UL;
+            return currentdateTime;
         } else {
             client->stop();
         } 

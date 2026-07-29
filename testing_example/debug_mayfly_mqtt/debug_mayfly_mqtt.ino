@@ -1,13 +1,15 @@
 #define XbeeSerial Serial1
 #define XbeePower 18
+#include "arduino_secrets.h"
+#include "Sodaq_DS3231.h"
 
 // #include <HydroServerMQTTClient.h>
 const char *MQTT_BROKER = "raspberrypi1.mypc.usu.edu";
 // #define TINY_GSM_MODEM_XBEE
 
 // wifi details
-const char *wifiId = "USU-guest";
-const char *wifiPwd = 0;
+const char *wifiId = WIFI_SSID;
+const char *wifiPwd = WIFI_PASS;
 
 #include <HydroServerMQTTClient.h>
 // #include <TinyGsmClient.h>
@@ -56,6 +58,20 @@ Observation streamTemperature;
 //   return String(buf);
 // }
 
+void setupDateTimeFromServer(uint32_t unix_time){
+  rtc.begin();
+  rtc.setDateTime(unix_time);
+}
+
+char *getISO8601Time() {
+  DateTime now = rtc.now();
+  // create a temporary buffer to put the timestamp into
+  static char buf[25];
+  snprintf(buf, sizeof(buf), "%04d-%02d-%02dT%02d:%02d:%02dZ", now.year(),
+           now.month(), now.date(), now.hour(), now.minute(), now.second());
+  return buf;
+}
+
 void setup() {
 
   Serial.begin(115200);
@@ -73,7 +89,10 @@ void setup() {
   }
 
   delay(2000);
-  Serial.println(xbee.getNISTTime());
+  uint32_t datetime = xbee.getNISTTime();
+  Serial.println(datetime);
+  setupDateTimeFromServer(datetime);
+  
 
   // connectToWifi();
   // streamTemperature.observedProperty = "Temperature";
@@ -107,7 +126,10 @@ void setup() {
 
 void loop() {
   Serial.println("printing");
-  delay(5000);
+  
+
+  Serial.println(getISO8601Time());
+  delay(10000);
   // mqttClient.poll();
   // sensors_event_t humidity, temp;
 
