@@ -124,6 +124,7 @@ void setup() {
   delay(2000);
   XbeeSerial.begin(57600);
   modem.init();
+
   delay(3000);
   connectWiFi();
   Serial.println("powering the modem");
@@ -131,37 +132,50 @@ void setup() {
   Serial.println("setting up rtc");
   modem.NTPServerSync("pool.ntp.org");
 
-  modem.waitForTimeSync();
-  getNetworkTime();
-  // This is important to make sure your mqtt works with esp32
-  sendATCommand("AT+CIPRECVMODE=1");
+  // this function waits for 120 seconds by defaults
+  modem.waitForTimeSync(30);
+  // modem.getGSMDateTime(TinyGSMDateTimeFormat::DATE_FULL);
+  uint32_t epoch = modem.getNetworkEpoch();
 
-  streamTemperature.observedProperty = "Temperature";
-  streamTemperature.datastreamId = "uuid-temperature";
-  streamTemperature.sensorId = "temp-sensor";
-  mqttClient.setClientID("mayfly-enlab-test");
-  // make sure to provide sitecode or else mqtt willnot work
-  mqttClient.setSiteCode("urwl");
-  Serial.println("Connecting to broker");
-  if (!mqttClient.connectToBroker()) {
-    Serial.println("Cannot connect to Broker. Connection Error is ");
-    Serial.println(mqttClient.getConnectionError());
-    // it make no sense to work further when connection to broker is not
-    // successful
-    while (1)
-      ;
-  };
-  Serial.println("Connection to Broker Successful");
+  Serial.print("Unix epoch: ");
+  Serial.print(epoch);
+  Serial.println("........................................");
+  Serial.println("look up");
+  // modem.getGSMDateTime();
+  Serial.println("........................................");
+
+  getNetworkTime();
+
+  // This is important to make sure your mqtt works with esp32
+  // modem.sendAT(GF("+CIPRECVMODE=1"));
+  // Serial.println("passive mode done");
+
+  // streamTemperature.observedProperty = "Temperature";
+  // streamTemperature.datastreamId = "uuid-temperature";
+  // streamTemperature.sensorId = "temp-sensor";
+  // mqttClient.setClientID("mayfly-enlab-test");
+  // // make sure to provide sitecode or else mqtt willnot work
+  // mqttClient.setSiteCode("urwl");
+  // Serial.println("Connecting to broker");
+  // if (!mqttClient.connectToBroker()) {
+  //   Serial.println("Cannot connect to Broker. Connection Error is ");
+  //   Serial.println(mqttClient.getConnectionError());
+  //   // it make no sense to work further when connection to broker is not
+  //   // successful
+  //   while (1)
+  //     ;
+  // };
+  // Serial.println("Connection to Broker Successful");
 }
 
 void loop() {
   Serial.println("publishing measurement");
-  mqttClient.poll();
-  float temperature;
-  temperature = random(20, 30);
-  streamTemperature.value = temperature;
+  // mqttClient.poll();
+  // float temperature;
+  // temperature = random(20, 30);
+  // streamTemperature.value = temperature;
 
-  // mqttClient.publishObservation(streamTemperature,"2026-06-07T14:30:00Z");
-  mqttClient.publishObservation(streamTemperature, getISO8601Time());
+  // // mqttClient.publishObservation(streamTemperature,"2026-06-07T14:30:00Z");
+  // mqttClient.publishObservation(streamTemperature, getISO8601Time());
   delay(10000);
 }
