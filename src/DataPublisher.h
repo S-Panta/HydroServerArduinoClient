@@ -8,8 +8,6 @@
 
 #include <Arduino.h>
 #include <ArduinoJson.h>
-#include <TimeLib.h>
-
 
 struct Observation {
   const char *observedProperty;

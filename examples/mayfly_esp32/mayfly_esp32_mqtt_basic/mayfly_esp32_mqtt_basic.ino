@@ -16,8 +16,6 @@ const char *wifiPwd = WIFI_PASS;
 
 const char *MQTT_BROKER = "raspberrypi1.mypc.usu.edu";
 // const char *MQTT_BROKER = "test.mosquitto.org";
-
-// const char *MQTT_BROKER = "192.168.0.101";
 const int32_t modemBaud = 57600;
 
 // #include <StreamDebugger.h>
@@ -64,46 +62,6 @@ String sendATCommand(String cmd, uint32_t timeout_ms = 2000) {
 
   return response;
 }
-
-// void connectWiFi() {
-//   //  the wifi setup is needed only for instanting modem for first time
-//   Serial.print(F("Setting SSID/password..."));
-//   if (!modem.networkConnect(wifiId, wifiPwd)) {
-//     Serial.println(" fail");
-//     delay(10000);
-//     while (1)
-//       ;
-//   }
-//   if (!modem.waitForNetwork()) {
-//     Serial.println("Wifi is not connected");
-//     delay(10000);
-//     return;
-//   }
-
-//   Serial.println("Wifi is connected");
-
-//   if (modem.isNetworkConnected()) {
-//     Serial.println("Network connected");
-//   }
-
-//   Serial.print("Local IP: ");
-//   Serial.println(modem.localIP());
-//   // sendATCommand("AT+CIPMUX=1");
-//   // Serial.println("CIPMUX is set to 1 in this step");
-
-//   // sendATCommand("AT+CIPMUX=1");
-//   // delay(2000);
-//   sendATCommand("AT+CIPRECVMODE?");
-//   // This is important to make sure your mqtt works with esp32
-//   // sendATCommand("AT+CIPRECVMODE=1");
-//   // Serial.println("the firmware set to passive");
-//   // delay(3000);
-//   // sendATCommand("AT+CIPRECVMODE?");
-//   // Serial.println("checking again");
-//   //
-//   sendATCommand("AT+CIPSTART=0,\"TCP\",\"raspberrypi1.mypc.usu.edu\",1883");
-//   // Serial.println("tcp connection is openeed in this step");
-// }
 
 void setupDateTimeFromServer(uint32_t unix_time) {
   rtc.begin();
