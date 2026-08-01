@@ -1,3 +1,8 @@
+/*
+  This file is part of HydroServerArduinoClient library.
+  Sabin Panta
+*/
+
 #ifndef SRC_MODEMS_EXPRESSIFESP32_H_
 #define SRC_MODEMS_EXPRESSIFESP32_H_
 
@@ -7,28 +12,30 @@
 #include "modem.h"
 #include <TinyGsmClient.h>
 
+#include <StreamDebugger.h>
+
 class ExpressifESP32 : public Modem {
 
-    public:
-        ExpressifESP32(Stream &serial, int8_t powerPin);
+public:
+  ExpressifESP32(Stream &xbeeSerial, int8_t powerPin, Stream &debugStream);
+  ExpressifESP32(Stream &xbeeSerial, int8_t powerPin);
 
-        Client *createClient() override;
+  Client *createClient() override;
 
-        Client *createSecureClient() override;
+  Client *createSecureClient() override;
 
-        bool connectToInternet(
-        const char* ssid,
-        const char* password,
-        uint32_t maxConnectionTime = 60000L
-        ) override;
-        
-        bool isInternetAvailable() override;
+  bool connectToInternet(const char *ssid, const char *password,
+                         uint32_t maxConnectionTime = 60000L) override;
 
-        uint32_t getNISTTime() override;
+  bool isInternetAvailable() override;
 
-    private:
-        TinyGsm _modem;
+  uint32_t getNISTTime() override;
 
+  void extraSetupForMQTT() override;
+
+private:
+  TinyGsm _modem;
+  StreamDebugger _debugger;
 };
 
 #endif
