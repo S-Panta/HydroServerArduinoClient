@@ -1,8 +1,6 @@
 #include <Arduino.h>
 
-#define TINY_GSM_MODEM_ESP32
 #define XbeeSerial Serial1
-// #define TINY_GSM_DEBUG Serial
 #define XBEE_PWR 18
 
 #include "Sodaq_DS3231.h"
@@ -16,52 +14,19 @@ const char *wifiPwd = WIFI_PASS;
 
 const char *MQTT_BROKER = "raspberrypi1.mypc.usu.edu";
 // const char *MQTT_BROKER = "test.mosquitto.org";
+// for esp32, modembaud should be 57600
 const int32_t modemBaud = 57600;
 
-// #include <StreamDebugger.h>
-// StreamDebugger debugger(Serial1, Serial);
-// TinyGsm modem(debugger);
-
-// TinyGsm modem(XbeeSerial);
-// TinyGsmClient client(modem);
 ExpressifESP32 esp32(XbeeSerial, XBEE_PWR);
+// for debugging
+// ExpressifESP32 esp32(XbeeSerial, XBEE_PWR,Serial);
+
 // Create an extra reference to the modem by a generic name
-ExpressifESP32 modem = esp32;
+ExpressifESP32 &modem = esp32;
 
 HydroServerMQTTClient mqttClient(*modem.createClient(), MQTT_BROKER);
 
 Observation temperature;
-
-String sendATCommand(String cmd, uint32_t timeout_ms = 2000) {
-  while (XbeeSerial.available()) {
-    XbeeSerial.read();
-  }
-
-  Serial.print(">> ");
-  Serial.println(cmd);
-
-  XbeeSerial.print(cmd);
-  XbeeSerial.print("\r\n");
-
-  String response = "";
-  uint32_t start = millis();
-  while (millis() - start < timeout_ms) {
-    while (XbeeSerial.available()) {
-      char c = XbeeSerial.read();
-      response += c;
-      start = millis();
-    }
-    if (response.endsWith("OK\r\n") || response.endsWith("ERROR\r\n")) {
-      break;
-    }
-  }
-
-  Serial.print("<< ");
-  Serial.println(response);
-  Serial.println("....................................");
-
-  return response;
-}
 
 void setupDateTimeFromServer(uint32_t unix_time) {
   rtc.begin();
@@ -99,7 +64,7 @@ void setup() {
   setupDateTimeFromServer(datetime);
 
   // This is important to make sure your mqtt works with esp32
-  sendATCommand("AT+CIPRECVMODE=1");
+  modem.extraSetupForMQTT();
 
   Serial.println("Initializing broker connection");
   mqttClient.setSiteCode("uwrl");
