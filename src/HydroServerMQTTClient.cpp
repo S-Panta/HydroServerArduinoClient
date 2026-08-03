@@ -30,7 +30,7 @@ void HydroServerMQTTClient::setCleanSession(bool cleanSession) {
   // client disconnects, the MQTT broker completely discards its state. For
   // publisher, this may not be important. Setting clean session to false, the
   // MQTT broker will remember the client state. A randomized or auto-generated
-  // Client ID would be always mean  clean session For QoS 0 messages, session
+  // Client ID would be always mean clean session For QoS 0 messages, session
   // type is irrelevant
   _cleanSession = cleanSession;
 }
@@ -106,15 +106,15 @@ int HydroServerMQTTClient::publishObservation(const Observation &observation,
   // true beginMessage(topic, size, retain, qos, dup); to-do : Since default
   // payload limit is 256, research on how that be increased
 
-  // topic construction is of format
-  // “sitecode/datalogger/observedproperty/observations”
-  char topic[128];
+  // topic construction is of format:
+  // “sitecode/deviceid/sensorid/observedproperty
+  char topic[256];
   // if all values of this topic is not initalized, broker will response with
   // malformed packet and mqtt connection will be terminated the first part
   // _sitecode should be valid, if not valid, no topic will form. other value
   // can be empty and mqtt works but not recommended
-  snprintf(topic, sizeof(topic), "%s/%s/%s/%s/observations", _sitecode,
-           _clientId, observation.sensorId, observation.observedProperty);
+  snprintf(topic, sizeof(topic), "%s/%s/%s/%s", _sitecode, _clientId,
+           observation.sensorId, observation.observedProperty);
   _mqttClient.beginMessage(topic, (unsigned long)payload.length());
   _mqttClient.print(payload);
   // only under qos 1 and 2 will return code from endmessage be 0 when message
@@ -125,7 +125,7 @@ int HydroServerMQTTClient::publishObservation(const Observation &observation,
 
 int HydroServerMQTTClient::setLastWill(const char *payload) {
   size_t payloadLength = strlen(payload);
-  char lastWillTopic[64];
+  char lastWillTopic[128];
   snprintf(lastWillTopic, sizeof(lastWillTopic), "%s/%s/lwt", _sitecode,
            _clientId);
   // to do : implement retain and qos
@@ -151,16 +151,42 @@ void HydroServerMQTTClient::setConnectionTimeout(unsigned long timeout) {
 int HydroServerMQTTClient::subscribe(const char *topic) {
   if (!_mqttClient.connected())
     return 0;
+  char fullTopic[256];
+  snprintf(fullTopic, sizeof(fullTopic), "%s/%s", _sitecode, topic);
   // by default, qos will be 0
-  return _mqttClient.subscribe(topic);
+  return _mqttClient.subscribe(fullTopic);
+}
+
+void HydroServerMQTTClient::deserializePayload() {
+  JsonDocument doc;
+  deserializeJson(doc, _mqttClient);
+
+  _latestValue = (float)doc["result"];
+}
+
+float HydroServerMQTTClient::getLatestValueofTopic(const char *topic) {
+  char fullTopic[128];
+  snprintf(fullTopic, sizeof(fullTopic), "%s/%s", _sitecode, topic);
+
+  if (strcmp(fullTopic, messageTopic().c_str()) == 0) {
+    Serial.println("Am I here");
+    return _latestValue;
+  }
+}
+
+// Registers the given callback to run whenever an MQTT message arrives,
+// on any topic the client is currently subscribed to.
+// If the client isn't subscribed to a topic, or the broker never
+// publishes to it, the callback simply won't run for that topic.
+// define a function that you want to do to incoming payload and register to
+// this function as callback Example : void doSomething(){};
+// mqttclient.onMessage(doSomething)
+void HydroServerMQTTClient::onMessage(void (*callback)(int)) {
+  _mqttClient.onMessage(callback);
 }
 
 int HydroServerMQTTClient::unsubscribe(const char *topic) {
   return _mqttClient.unsubscribe(topic);
-}
-
-void HydroServerMQTTClient::onMessage(void (*callback)(int)) {
-  _mqttClient.onMessage(callback);
 }
 
 void HydroServerMQTTClient::poll() { _mqttClient.poll(); }
