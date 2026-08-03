@@ -97,5 +97,5 @@ uint32_t DigiXbeeS6B::getNISTTime() {
 void DigiXbeeS6B::extraSetupForMQTT() {
   // Not implemented
   // Here, ATDl and Port should be set before setting a tcp connection
-  return nullptr;
+  // return nullptr;
 }

@@ -44,7 +44,7 @@ The phenomenonTime should be in Iso format. Therefore copy the function `getISO8
 ### Topic Structure
 The library will automatically create topic for each observation and Last will based on the site id, client id and observation struct provided by the user. The topic for observation is in format 
 ```
-    <sitecode>/<clientId>/<sensorId>/<observedProperty>/observations
+    <sitecode>/<clientId>/<sensorId>/<observedProperty>
 ```
 Last will topic is in format 
 ```

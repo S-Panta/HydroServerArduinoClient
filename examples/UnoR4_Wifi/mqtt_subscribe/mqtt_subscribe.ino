@@ -1,0 +1,185 @@
+// ============================================================
+// mqtt_subscribe.ino
+//
+// Basic example: connect an Arduino Uno R4 WiFi board to a WiFi
+// network, connect to a MQTT broker, and publish
+// simulated sensor observations (temperature, pH) every 10 seconds and
+// subscribe to incoming topic message
+//
+// This is meant as a minimal starting point — swap the random
+// values below for real sensor readings in your own project.
+// ============================================================
+
+// Wifi credentials
+// if you want to add wifi ssid and password from arduino_secrets
+// This should be in the sketch folder
+#include "arduino_secrets.h"
+
+const char *ssid = WIFI_SSID;
+const char *password = WIFI_PASS;
+
+// MQTT broker details
+// You can use both url or ip address of mqtt broker.
+// const char* MQTT_BROKER = "144.39.67.171";
+// const char *MQTT_BROKER = "test.mosquitto.org";
+const char *MQTT_BROKER = "raspberrypi1.mypc.usu.edu";
+
+// How often (ms) to publish sensor data. Using millis()-based timing instead of
+// delay() so mqttClient.poll() can still run responsively in between.
+const long interval = 30000;
+unsigned long previousMillis = 0;
+
+// importing wifi driver specific to the Arduino Uno R4 board
+#include <WiFiS3.h>
+
+#include <HydroServerMQTTClient.h>
+WiFiClient wifiClient;
+
+// Create the HydroServer MQTT client.
+// wificlient and broker address are necessary while other are optional
+// parameter by default, the broker port is 1883, so it is not necessary to pass
+// unless otherwise.
+HydroServerMQTTClient mqttClient(wifiClient, MQTT_BROKER);
+
+// Observations to publish
+// Each Observation represents one sensor reading,
+//   1. observedProperty — human-readable name of what's measured
+//   2. datastreamId     — UUID identifying the target datastream on HydroServer
+//   3. sensorId         — identifier for the physical sensor
+//   4. value            — the actual reading (defaults to 0.0, set later in
+//   loop())
+Observation temperature = {"temperature", "uuidtemperature", "tempsensorid"};
+Observation ph = {"pH", "uuidPh", "phsensorid"};
+
+// Array of POINTERS to the observations above.
+Observation *observations[] = {&temperature, &ph};
+
+// This is for realtime clock
+#include "RTC.h"
+#include <NTPClient.h>
+#include <WiFiUdp.h>
+WiFiUDP ntpUDP;
+
+NTPClient timeClient(ntpUDP, "north-america.pool.ntp.org");
+
+// Reads the RTC and convert into iso time
+char *getISO8601Time() {
+  RTCTime t;
+  RTC.getTime(t);
+  // static: buffer must outlive the function return
+  static char buf[25];
+  snprintf(buf, sizeof(buf), "%04d-%02d-%02dT%02d:%02d:%02dZ", t.getYear(),
+           Month2int(t.getMonth()), t.getDayOfMonth(), t.getHour(),
+           t.getMinutes(), t.getSeconds());
+  return buf;
+}
+
+void messageReceived(int messageSize) {
+  mqttClient.deserializePayload();
+  Serial.println(mqttClient.getLatestValueofTopic(
+      "python_publisher/sensorid/temperature_celsius"));
+}
+
+void connectWiFi() {
+  delay(2000);
+  Serial.print("Connecting to WiFi: ");
+  WiFi.begin(ssid, password);
+
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    while (1)
+      ;
+  }
+  Serial.println("\nWiFi connected!");
+  // some time requires for DHCP to assign IP
+  delay(5000);
+  // IP address if not 0.0.0.0 means the device is connected to wifi
+  Serial.print("IP Address: ");
+  Serial.println(WiFi.localIP());
+}
+
+// Must run after Wi-Fi is connected and before any publish
+void syncRTCFromNTP() {
+  timeClient.update();
+  unsigned long unixTime = timeClient.getEpochTime();
+  RTCTime timeToSet = RTCTime(unixTime);
+  RTC.setTime(timeToSet);
+  Serial.print("RTC set to: ");
+  Serial.println(timeClient.getFormattedTime());
+}
+
+void setup() {
+  Serial.begin(115200);
+  delay(1000);
+
+  Serial.print("Running sketch ");
+  // __FILE__ prints full path so need to extract filename from that path
+  Serial.println(__builtin_strrchr(__FILE__, '/') + 1);
+
+  connectWiFi();
+
+  // setting time from server
+  timeClient.update();
+
+  RTC.begin();
+  syncRTCFromNTP();
+  Serial.println("connecting to broker");
+
+  // sitecode and client id are necessary setters. They are used in generating
+  // topic for publishing observations observation is published as
+  // <sitecode>/<clientId>/<sensorId>/<observedProperty>/observations
+  mqttClient.setSiteCode("uwrl");
+  mqttClient.setClientID("Arduinopublisher");
+  // optional mqtt parameters
+  // Optional: message the broker will publish if this device disconnects
+  // unexpectedly mqttClient.setLastWill("arduino uno is shutting down");
+
+  // Optional: authenticate if your broker requires a username/password
+  // mqttClient.setAuthentication("myUsername", "myPassword");
+
+  if (!mqttClient.connectToBroker()) {
+    Serial.println("Connection to Broker failed. Connection Error is");
+    Serial.println(mqttClient.getConnectionError());
+    while (1)
+      ;
+  };
+  Serial.println("connection successful");
+
+  // register callback to tell your device to act according to the message it
+  // receive
+  mqttClient.onMessage(messageReceived);
+  mqttClient.subscribe("python_publisher/sensorid/temperature_celsius");
+  mqttClient.subscribe("python_publisher/sensorid/pressure_hpa");
+}
+
+void loop() {
+
+  // Must be called regularly to keep the MQTT connection alive — handles
+  // PINGREQ/PINGRESP with the broker plus any incoming subscribed messages.
+  // The broker disconnects a client if it receives nothing for roughly
+  // 1.5x the keep-alive interval (default is 90 for the library).
+  // If requires, adjust the interval with setKeepAliveInterval() before
+  // connecting.
+
+  mqttClient.poll();
+
+  unsigned long currentMillis = millis();
+  if (currentMillis - previousMillis >= interval) {
+    Serial.println("publishing every 30 seconds");
+    // Simulated sensor readings. This should be replaced with the real sensor
+    // measurement.
+    float randomTemp, randomPh;
+    randomTemp = random(200, 351) / 10.0;
+    randomPh = random(1, 7);
+    previousMillis = currentMillis;
+
+    temperature.value = randomTemp;
+    ph.value = randomPh;
+    // To publish just one observation, use publishObservation() instead:
+    // mqttClient.publishObservation(temperature,getISO8601Time());
+
+    // For publishing multiple observation at the same time
+    uint8_t size = sizeof(observations) / sizeof(observations[0]);
+    mqttClient.publishAll(observations, size, getISO8601Time());
+  };
+}
