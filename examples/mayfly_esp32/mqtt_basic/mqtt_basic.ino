@@ -52,7 +52,6 @@ void setup() {
   modem.powerUp();
   delay(1000);
 
-  delay(3000);
   Serial.println("powered up module");
   if (!modem.connectToInternet(wifiId, wifiPwd)) {
     Serial.println("Wifi is not connected");
@@ -60,7 +59,6 @@ void setup() {
   Serial.println("Wifi is connected");
   delay(2000);
   uint32_t datetime = modem.getNISTTime();
-  Serial.println(datetime);
   setupDateTimeFromServer(datetime);
 
   // This is important to make sure your mqtt works with esp32
