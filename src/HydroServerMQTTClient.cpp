@@ -169,7 +169,6 @@ float HydroServerMQTTClient::getLatestValueofTopic(const char *topic) {
   snprintf(fullTopic, sizeof(fullTopic), "%s/%s", _sitecode, topic);
 
   if (strcmp(fullTopic, messageTopic().c_str()) == 0) {
-    Serial.println("Am I here");
     return _latestValue;
   }
 }

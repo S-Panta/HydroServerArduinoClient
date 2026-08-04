@@ -65,7 +65,9 @@ String getNextTimestampISO8601() {
 void setup() {
   Serial.begin(115200);
   delay(1000);
-  Serial.println("running sketch debug_http.ino");
+  Serial.print("Running sketch ");
+  // __FILE__ prints full path so need to extract filename from that path
+  Serial.println(__builtin_strrchr(__FILE__, '/') + 1);
   delay(3000);
 
   connectWiFi();

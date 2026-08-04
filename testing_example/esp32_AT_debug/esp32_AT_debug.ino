@@ -39,7 +39,9 @@ String sendATCommand(String cmd, uint32_t timeout_ms = 2000) {
 void setup() {
   Serial.begin(115200);
   delay(1000);
-  Serial.println("esp32 AT command test");
+  Serial.print("Running sketch ");
+  // __FILE__ prints full path so need to extract filename from that path
+  Serial.println(__builtin_strrchr(__FILE__, '/') + 1);
 
   pinMode(XBEE_PWR, OUTPUT);
   digitalWrite(XBEE_PWR, HIGH);
