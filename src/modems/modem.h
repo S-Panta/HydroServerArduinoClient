@@ -28,10 +28,8 @@ public:
   virtual bool isInternetAvailable() = 0;
 
   virtual uint32_t getNISTTime() = 0;
-
-  // Modem-specific setup required before MQTT can be used.
-  virtual void extraSetupForMQTT() = 0;
-
+  
+  // virtual void getLocalIp()= 0;
   // // todo: implement this for debug output
   // String getModemName();
 

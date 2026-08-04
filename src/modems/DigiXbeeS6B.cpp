@@ -22,38 +22,48 @@ Client *DigiXbeeS6B::createSecureClient() {
 
 bool DigiXbeeS6B::connectToInternet(const char *ssid, const char *password,
                                     uint32_t maxConnectionTime) {
-  // make sure the modem was powered on first
   // Xbee are quite slow. Need to wait for some time after initialization
   delay(5000);
+  // XBee modules usually keep the previously configured Wi-Fi credentials,
+  // so there is no need to set them again. Reconnecting takes longer because
+  // the module must join the Wi-Fi network and obtain an IP address assigned
+  // by the router
+  // AI will responds sometime with FF for so long
   String atResponse = _modem.sendATGetString(GF("AI"));
 
   if(atResponse == "0"){
-    return true
+    return true;
   }
 
-  if(atResponse == "FF"){
-    delay(15000);
-    
-  }
-  
-  
+  if (atResponse == "FF")
+{
+    const unsigned long timeout = 120000; // 2 minutes
+    const unsigned long interval = 15000; // 15 seconds
 
-  if(connectionResponse == "FF"){
-    
-    Serial.println("I am here");
-  }
-  Serial.println(connectionResponse);
-  Serial.println("above connectionResponse");
+    unsigned long start = millis();
 
-  // if(connectionResponse){
-  //   return true;
-  // }
-  if (!_modem.networkConnect(ssid, password)) {
+    while (millis() - start < timeout)
+    {
+        delay(interval);
+
+        atResponse = _modem.sendATGetString(GF("AI"));
+
+        if (atResponse == "0")
+        {
+            return true;
+        }
+
+        Serial.print(F("AI = "));
+        Serial.println(atResponse);
+    }
+
+    // Timed out waiting for association
     return false;
-  }
-  // String responseid = _modem.sendATGetString(GF("MY"));
-  // Serial.println(responseid);
-  Serial.println("Do I get upto here??????");
+}
+  // this means the module doesn't have correct ssid and password
+  // if (!_modem.networkConnect(ssid, password)) {
+  //   return false;
+  // }
 
   // this checks whether local IP and DNS have been allocated
   // and not 0.0.0.0
@@ -71,7 +81,9 @@ bool DigiXbeeS6B::connectToInternet(const char *ssid, const char *password,
   return true;
 }
 
-bool DigiXbeeS6B::isInternetAvailable() { return _modem.isNetworkConnected(); }
+bool DigiXbeeS6B::isInternetAvailable() { 
+  return _modem.isNetworkConnected(); 
+}
 
 // returns time in utc
 uint32_t DigiXbeeS6B::getNISTTime() {
@@ -123,8 +135,34 @@ uint32_t DigiXbeeS6B::getNISTTime() {
   }
 }
 
-void DigiXbeeS6B::extraSetupForMQTT() {
-  // Not implemented
-  // Here, ATDl and Port should be set before setting a tcp connection
-  // return nullptr;
+bool DigiXbeeS6B::_changeXbeeConfig(const char * cmd,String newValue){
+  _modem.commandMode();
+  delay(2000);
+  _modem.sendAT(cmd);
+  // check whether this step is necessary
+  if(_modem.readResponseString(10000)==newValue){
+    return true;
+  };
+
+  _modem.sendAT(cmd,newValue);
+  delay(3000);
+  _modem.sendAT(cmd);
+  // it might take longer than this time
+  if(_modem.readResponseString(10000)==newValue){
+    _modem.writeChanges();
+    return true;
+  };
+  return false;
+}
+
+// It is better than xbee is first configured by xctu.
+// if done, then this function can be ignored
+void DigiXbeeS6B::extraSetupForMQTT(const char * host , uint16_t port) {
+// It is recommended that you enter the IP address
+// need to set up first host and port to open tcp connection so mqtt can work
+
+_changeXbeeConfig("DL",String(host));
+  String newPort = String(port,HEX);
+  _changeXbeeConfig("DE",newPort);
+  // to:do: there are other setting like tcp timeout that should be done
 }

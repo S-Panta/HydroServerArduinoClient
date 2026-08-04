@@ -26,11 +26,11 @@ void setup() {
   delay(2000);
   
   enterCommandMode();
-  sendATCommand("ATID");   // SSID
-  sendATCommand("ATEE");   // Encryption type enabled (0=none,2=WPA,3=WPA2,4=WEP)
-  sendATCommand("ATAI");   // Association indication (0 = connected)
-  sendATCommand("ATMY");   // Current IP address
-  sendATCommand("ATIP");   // IP protocol (TCP/UDP)
+  sendATCommand("ATID");   
+  sendATCommand("ATEE");  
+  sendATCommand("ATAI");   
+  sendATCommand("ATMY");   
+  sendATCommand("ATIP");  
   sendATCommand("ATDL");
   sendATCommand("ATPK");
   sendATCommand("AT");
