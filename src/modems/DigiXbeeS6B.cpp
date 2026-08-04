@@ -23,22 +23,51 @@ Client *DigiXbeeS6B::createSecureClient() {
 bool DigiXbeeS6B::connectToInternet(const char *ssid, const char *password,
                                     uint32_t maxConnectionTime) {
   // make sure the modem was powered on first
-  powerUp();
+  // Xbee are quite slow. Need to wait for some time after initialization
+  delay(5000);
+  String atResponse = _modem.sendATGetString(GF("AI"));
+
+  if(atResponse == "0"){
+    return true
+  }
+
+  if(atResponse == "FF"){
+    delay(15000);
+    
+  }
+  
+  
+
+  if(connectionResponse == "FF"){
+    
+    Serial.println("I am here");
+  }
+  Serial.println(connectionResponse);
+  Serial.println("above connectionResponse");
+
+  // if(connectionResponse){
+  //   return true;
+  // }
   if (!_modem.networkConnect(ssid, password)) {
     return false;
   }
+  // String responseid = _modem.sendATGetString(GF("MY"));
+  // Serial.println(responseid);
+  Serial.println("Do I get upto here??????");
 
   // this checks whether local IP and DNS have been allocated
   // and not 0.0.0.0
   if (!(isInternetAvailable())) {
     // waits and check for isNetworkConnected()
     // default time is 60s
+    delay(10000);
     if (!_modem.waitForNetwork(maxConnectionTime)) {
       // debug the output as network not connected
       return false;
       // PRINTOUT(F("... WiFi connection failed"));
-    }
+    } 
   };
+
   return true;
 }
 
