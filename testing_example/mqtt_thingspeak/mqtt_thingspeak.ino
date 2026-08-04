@@ -34,7 +34,9 @@ void connectWiFi() {
 void setup() {
   Serial.begin(115200);
   delay(1000);
-  Serial.println("running code for debug");
+  Serial.print("Running sketch ");
+  // __FILE__ prints full path so need to extract filename from that path
+  Serial.println(__builtin_strrchr(__FILE__, '/') + 1);
   connectWiFi();
   Serial.println("connecting to broker");
   mqttClient.setClientID(SECRET_MQTT_CLIENT_ID);

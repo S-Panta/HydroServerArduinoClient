@@ -153,14 +153,6 @@ void setup() {
 }
 
 void loop() {
-
-  // Must be called regularly to keep the MQTT connection alive — handles
-  // PINGREQ/PINGRESP with the broker plus any incoming subscribed messages.
-  // The broker disconnects a client if it receives nothing for roughly
-  // 1.5x the keep-alive interval (default is 90 for the library).
-  // If requires, adjust the interval with setKeepAliveInterval() before
-  // connecting.
-
   mqttClient.poll();
 
   unsigned long currentMillis = millis();

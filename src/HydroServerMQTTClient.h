@@ -78,8 +78,12 @@ public:
 
   int unsubscribe(const char *topic);
 
-  // Must be called regularly (e.g. in loop()) to process incoming
-  // messages and maintain the broker connection
+  // mqttClient.poll() must be called regularly to keep MQTT connection alive
+  // It maintain PINGREQ/PINGRESP handhsake with the broker.
+  // The broker disconnects a client if it receives nothing
+  // for roughly 1.5x the keep-alive interval (default is 90 for the library).
+  // If requires, adjust the interval with setKeepAliveInterval() before
+  // connecting.
   void poll();
 
   // Registers a callback to handle incoming MQTT messages.

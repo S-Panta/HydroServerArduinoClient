@@ -14,6 +14,7 @@ const char *wifiPwd = WIFI_PASS;
 
 const char *MQTT_BROKER = "raspberrypi1.mypc.usu.edu";
 // const char *MQTT_BROKER = "test.mosquitto.org";
+
 // for esp32, modembaud should be 57600
 const int32_t modemBaud = 57600;
 
@@ -27,6 +28,9 @@ ExpressifESP32 &modem = esp32;
 HydroServerMQTTClient mqttClient(*modem.createClient(), MQTT_BROKER);
 
 Observation temperature;
+
+unsigned long lastPublishTime = 0;
+const unsigned long publishInterval = 10000;
 
 void setupDateTimeFromServer(uint32_t unix_time) {
   rtc.begin();
@@ -45,9 +49,11 @@ char *getISO8601Time() {
 void setup() {
   Serial.begin(115200);
   delay(1000);
-  Serial.println("esp32 test");
+  Serial.print("Running sketch ");
+  // __FILE__ prints full path so need to extract filename from that path
+  Serial.println(__builtin_strrchr(__FILE__, '/') + 1);
 
-  XbeeSerial.begin(57600);
+  XbeeSerial.begin(modemBaud);
 
   modem.powerUp();
   delay(1000);
@@ -60,6 +66,7 @@ void setup() {
   delay(2000);
   uint32_t datetime = modem.getNISTTime();
   setupDateTimeFromServer(datetime);
+  Serial.println("datetime setup from server completed");
 
   // This is important to make sure your mqtt works with esp32
   modem.extraSetupForMQTT();
@@ -83,11 +90,15 @@ void setup() {
 }
 
 void loop() {
-  Serial.println("publishing information");
   mqttClient.poll();
-  float randomTemp;
-  randomTemp = random(20, 25);
-  temperature.value = randomTemp;
-  mqttClient.publishObservation(temperature, getISO8601Time());
-  delay(10000);
+  unsigned long now = millis();
+  if (now - lastPublishTime >= publishInterval) {
+    lastPublishTime = now;
+
+    float randomTemp = random(20, 25);
+    temperature.value = randomTemp;
+    mqttClient.publishObservation(temperature, getISO8601Time());
+
+    Serial.println("published");
+  }
 }
