@@ -29,12 +29,11 @@ public:
 
   virtual uint32_t getNISTTime() = 0;
 
-  // // todo: implement this for debug output
-  // String getModemName();
-
   // Modem-specific setup required before MQTT can be used.
   virtual void extraSetupForMQTT() = 0;
-  //  void extraSetupForHTTPS();
+
+  // // todo: implement this for debug output
+  // String getModemName();
 
 private:
   // by default, mayfly 1.1 has pin 18

@@ -31,6 +31,8 @@ public:
 
   uint32_t getNISTTime() override;
 
+  void extraSetupForHTTPS(const char* host,const int port);
+
   void extraSetupForMQTT() override;
 
 private:

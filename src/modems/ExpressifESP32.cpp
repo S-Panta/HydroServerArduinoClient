@@ -14,9 +14,7 @@ ExpressifESP32::ExpressifESP32(Stream &xbeeSerial, int8_t powerPin,
 Client *ExpressifESP32::createClient() { return new TinyGsmClient(_modem); }
 
 Client *ExpressifESP32::createSecureClient() {
-  // todo
-  // secure client is not possible in xbee s6b
-  return nullptr;
+  return new TinyGsmClientSecure(_modem);
 }
 
 bool ExpressifESP32::connectToInternet(const char *ssid, const char *password,
@@ -67,9 +65,27 @@ uint32_t ExpressifESP32::getNISTTime() {
   return currentdateTime;
 }
 
-void ExpressifESP32::extraSetupForMQTT() {
+void ExpressifESP32::extraSetupForMQTT(){
+  // See :https://docs.espressif.com/projects/esp-at/en/release-v2.4.0.0/esp32/AT_Command_Set/TCP-IP_AT_Commands.html#at-ciprecvmode-query-set-socket-receiving-mode
+  // This should be done before opening tcp connection
   _modem.sendAT(GF("+CIPRECVMODE=1"));
-  if (_modem.waitResponse() != 1) {
-    return;
-  }
+}
+
+
+void ExpressifESP32::extraSetupForHTTPS(const char* host, const int port) {
+  // Some HTTPS servers(like playground instance of hydroserver) host multiple domains on the same IP address.
+  // During the TLS handshake, the modem must send the hostname using
+  // Server Name Indication so the server can present the correct
+  // SSL/TLS certificate. Without SNI, the connection may fail even
+  // though DNS resolution and TCP connectivity succeed.
+  _modem.sendAT(GF("+CIPRECVMODE=1"));
+  // Ref: https://docs.espressif.com/projects/esp-at/en/release-v2.4.0.0/esp32/AT_Command_Set/TCP-IP_AT_Commands.html#at-cipsslcsni-query-set-ssl-client-server-name-indication-sni
+  _modem.sendAT(GF("+CIPSSLCSNI=0,\""), host, GF("\""));
+  _modem.sendAT(GF("+CIPSSLCSNI=1,\""), host, GF("\""));
+  delay(3000);
+
+  // See : https://docs.espressif.com/projects/esp-at/en/latest/esp32/AT_Command_Set/TCP-IP_AT_Commands.html#cmd-start
+  // same as above. This also need to be done twice
+  _modem.sendAT(GF("+CIPSTART=0,\"SSL\",\""), host, GF("\","), port);
+  _modem.sendAT(GF("+CIPSTART=1,\"SSL\",\""), host, GF("\","), port);
 }

@@ -1,25 +1,14 @@
-#include <Arduino.h>
-
-// for esp32
-#define TINY_GSM_MODEM_ESP32
-
-// for xbee
-// #define TINY_GSM_MODEM_XBEE
 #define XbeeSerial Serial1
-// for debugging
-// #define TINY_GSM_DEBUG Serial
-#include <TinyGsmClient.h>
 #define XBEE_PWR 18
 
-#define TINY_GSM_USE_GPRS false
-#define TINY_GSM_USE_WIFI true
-
+#include "Sodaq_DS3231.h"
 #include "arduino_secrets.h"
 #include <HydroServerHTTPClient.h>
+#include <modems/ExpressifESP32.h>
 
 // wifi details
-const char *wifiId = "USU-guest";
-const char *wifiPwd = 0;
+const char *wifiId = WIFI_SSID;
+const char *wifiPwd = WIFI_PASS;
 
 // for playground
 const char *apiKey = PLAYGROUND_API_KEY;
@@ -27,141 +16,69 @@ const char *datastreamId = "019f246b-c5b9-7b45-aac6-261adc526b55";
 const char *serverAddress = "playground.hydroserver.org";
 const int serverPort = 443;
 
-const int mux = 0;
-// for debugging
-#include <StreamDebugger.h>
-// StreamDebugger debugger(Serial1, Serial);
-// TinyGsm        modem(debugger);
+ExpressifESP32 esp32(XbeeSerial, XBEE_PWR);
+ExpressifESP32 &modem = esp32;
 
-// for normal mode
-TinyGsm modem(XbeeSerial);
-// TinyGsmClient client(modem);
-
-TinyGsmClientSecure sslClient(modem, mux);
-
-HydroServerHTTPClient hsClient(sslClient, serverAddress, serverPort);
+HydroServerHTTPClient hsClient(*modem.createSecureClient(), serverAddress,
+                               serverPort);
 Observation temperature;
-int currentHour = 3;
 
-String sendATCommand(String cmd, uint32_t timeout_ms = 2000) {
-  while (XbeeSerial.available()) {
-    XbeeSerial.read();
-  }
-
-  Serial.print(">> ");
-  Serial.println(cmd);
-
-  XbeeSerial.print(cmd);
-  XbeeSerial.print("\r\n");
-
-  String response = "";
-  uint32_t start = millis();
-  while (millis() - start < timeout_ms) {
-    while (XbeeSerial.available()) {
-      char c = XbeeSerial.read();
-      response += c;
-      start = millis();
-    }
-    if (response.endsWith("OK\r\n") || response.endsWith("ERROR\r\n")) {
-      break;
-    }
-  }
-
-  Serial.print("<< ");
-  Serial.println(response);
-  Serial.println("....................................");
-
-  return response;
+void setupDateTimeFromServer(uint32_t unix_time) {
+  rtc.begin();
+  rtc.setDateTime(unix_time);
 }
 
-void connectWiFi() {
-
-  // the wifi setup is needed only for instanting modem for first time
-  // Serial.print(F("Setting SSID/password..."));
-  // if (!modem.networkConnect(wifiId, 0)) {
-  //   Serial.println(" fail");
-  //   delay(10000);
-  //   while(1);
-  // }
-
-  if (!modem.waitForNetwork()) {
-    Serial.println("Wifi is not connected");
-    delay(10000);
-    while (1)
-      ;
-  }
-
-  Serial.println("Wifi is connected");
-
-  if (modem.isNetworkConnected()) {
-    Serial.println("Network connected");
-  }
-
-  Serial.print("Local IP: ");
-  Serial.println(modem.localIP());
-
-  // sendATCommand("AT+CIPRECVMODE?");
-  // This is important to make sure your mqtt works with esp32
-  sendATCommand("AT+CIPRECVMODE=1");
-
-  Serial.println("the firmware set to passive");
-  delay(3000);
-
-  // Some HTTPS servers host multiple domains on the same IP address.
-  // During the TLS handshake, the modem must send the hostname using
-  // Server Name Indication so the server can present the correct
-  // SSL/TLS certificate. Without SNI, the connection may fail even
-  // though DNS resolution and TCP connectivity succeed.
-  // I don't know how this works but this need to be done twice
-  // 0 and 1 connection ID needs SNI
-  sendATCommand("AT+CIPSSLCSNI=0,\"playground.hydroserver.org\"");
-  sendATCommand("AT+CIPSSLCSNI=1,\"playground.hydroserver.org\"");
-  4 delay(3000);
-  // same as above. This also need to be done twice
-  sendATCommand("AT+CIPSTART=0,\"SSL\",\"playground.hydroserver.org\",443");
-  sendATCommand("AT+CIPSTART=1,\"SSL\",\"playground.hydroserver.org\",443");
-}
-
-String getNextTimestampISO8601() {
-  char buffer[25];
-  snprintf(buffer, sizeof(buffer), "2026-07-17T%02d:59:43Z", currentHour);
-  currentHour = (currentHour + 1) % 24;
-  return String(buffer);
+char *getISO8601Time() {
+  DateTime now = rtc.now();
+  // create a temporary buffer to put the timestamp into
+  static char buf[25];
+  snprintf(buf, sizeof(buf), "%04d-%02d-%02dT%02d:%02d:%02dZ", now.year(),
+           now.month(), now.date(), now.hour(), now.minute(), now.second());
+  return buf;
 }
 
 void setup() {
   Serial.begin(115200);
   delay(1000);
-  Serial.println("esp32 test");
+  Serial.print("Running sketch ");
+  // __FILE__ prints full path so need to extract filename from that path
+  Serial.println(__builtin_strrchr(__FILE__, '/') + 1);
 
-  pinMode(XBEE_PWR, OUTPUT);
-  digitalWrite(XBEE_PWR, HIGH);
-  // For xbee, comment this line out, xbee runs on 9600 baud rate
   XbeeSerial.begin(57600);
-  // XbeeSerial.begin(9600);
+  delay(1000);
 
-  delay(3000);
-  Serial.println("powered up module");
+  modem.powerUp();
+  delay(1000);
+  Serial.println("Xbee module powered up");
 
-  // For xbee, comment this line out
-  modem.init();
+  if (!modem.connectToInternet(wifiId, wifiPwd)) {
+    Serial.println("Wifi is not connected");
+  }
+  Serial.println("Wifi is connected");
+  delay(2000);
+  Serial.println("setting time from server");
+  uint32_t datetime = modem.getNISTTime();
+  setupDateTimeFromServer(datetime);
+  Serial.println("Time setup from server completed");
 
-  connectWiFi();
+  Serial.println("running extra setup for https");
+  modem.extraSetupForHTTPS(serverAddress, serverPort);
+  Serial.println("extra setup for https completed");
+
   hsClient.setApiKey(apiKey);
 
   temperature.datastreamId = datastreamId;
   temperature.sensorId = "sensorid";
   temperature.observedProperty = "Temperature";
+}
 
+void loop() {
   Serial.println("posting to hydroserver");
-  double randomValue = random(0, 3000) / 10.0;
-  String timestamp = getNextTimestampISO8601();
+  double randomValue = random(35, 50);
   temperature.value = randomValue;
-
-  int status = hsClient.publishObservation(temperature, timestamp.c_str());
+  int status = hsClient.publishObservation(temperature, getISO8601Time());
   Serial.println(status);
   Serial.print(hsClient.getResponseBody());
   Serial.println(randomValue);
+  delay(30000);
 }
-
-void loop() {}
