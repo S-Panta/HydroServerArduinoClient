@@ -13,6 +13,7 @@ const char *wifiId = WIFI_SSID;
 const char *wifiPwd = WIFI_PASS;
 
 const char *MQTT_BROKER = "raspberrypi1.mypc.usu.edu";
+
 // for esp32, modembaud should be 57600
 const int32_t modemBaud = 57600;
 
@@ -53,9 +54,11 @@ void messageReceived(int messageSize) {
 void setup() {
   Serial.begin(115200);
   delay(1000);
-  Serial.println("esp32 test");
+  Serial.print("Running sketch ");
+  // __FILE__ prints full path so need to extract filename from that path
+  Serial.println(__builtin_strrchr(__FILE__, '/') + 1);
 
-  XbeeSerial.begin(57600);
+  XbeeSerial.begin(modemBaud);
 
   modem.powerUp();
   delay(1000);
@@ -67,9 +70,9 @@ void setup() {
   }
   Serial.println("Wifi is connected");
   delay(2000);
-  // uint32_t datetime = modem.getNISTTime();
-  // Serial.println(datetime);
-  // setupDateTimeFromServer(datetime);
+  uint32_t datetime = modem.getNISTTime();
+  Serial.println(datetime);
+  setupDateTimeFromServer(datetime);
 
   // This is important to make sure your mqtt works with esp32
   modem.extraSetupForMQTT();
