@@ -18,6 +18,8 @@ public:
 
   void setApiKey(const char *apiKey);
 
+  int getStatusCode()const;
+
   String getResponseBody() const;
   int publishObservation(const Observation &observation,
                          const char *phenomenonTime) override;
@@ -27,6 +29,7 @@ private:
   const char *_apiKey;
   const char *_apiPath = "/api/sensorthings/v1.1/Observations";
   String _responseBody;
+  int _statusCode;
 };
 
 #endif

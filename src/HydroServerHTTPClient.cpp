@@ -32,9 +32,15 @@ int HydroServerHTTPClient::publishObservation(const Observation &observation,
   _httpClient.print(requestBody);
   _httpClient.endRequest();
 
-  int statusCode = _httpClient.responseStatusCode();
+  _statusCode = _httpClient.responseStatusCode();
   _responseBody = _httpClient.responseBody();
-  return statusCode;
+  return _statusCode == 201;
+}
+
+// read-only method has const after a function declaration
+// const objects are only allowed to call these const functions
+int HydroServerHTTPClient::getStatusCode()const {
+  return _statusCode;
 }
 
 String HydroServerHTTPClient::getResponseBody() const { return _responseBody; }

@@ -50,15 +50,15 @@ void setup() {
   delay(3000);
   Serial.println("powered up module");
 
-  sendATCommand("AT");
 // sendATCommand("AT+GMR");
 // sendATCommand("AT+CIPMUX?");
 // sendATCommand("AT+CIPSTATUS");
 // sendATCommand("AT+CMD?");
 // sendATCommand("AT+CIPSTA?");
 // delay(2000);
-sendATCommand("AT+CIPRECVMODE?");
-sendATCommand("AT+CIPMUX?");
+sendATCommand("AT+GMR");
+// sendATCommand("AT+CIPRECVMODE?");
+// sendATCommand("AT+CIPMUX?");
 // sendATCommand("AT+GMR");
 // sendATCommand("AT+CIPMUX=1");
 // sendATCommand("AT+CIPMUX?");
