@@ -11,19 +11,15 @@ const char *apiKey = PLAYGROUND_API_KEY;
 const char *datastreamId = "019f246b-c5b9-7b45-aac6-261adc526b55";
 const char *serverAddress = "playground.hydroserver.org";
 const int serverPort = 443;
+WiFiClient wifiClient;
+WiFiSSLClient sslClient;
+HydroServerHTTPClient hsClient(sslClient, serverAddress, serverPort);
 
 // for local
 // const char *serverAddress = "144.39.67.171";
 // const int serverPort = 80;
 // const char *apiKey = LOCAL_API_KEY;
 // const char *datastreamId = "019eae3f-3450-70db-b5d2-a55879b4d681";
-
-// for playground instance
-WiFiClient wifiClient;
-WiFiSSLClient sslClient;
-HydroServerHTTPClient hsClient(sslClient, serverAddress, serverPort);
-
-// for local instance
 // WiFiClient wifiClient;
 // HydroServerHTTPClient hsClient(wifiClient, serverAddress, serverPort);
 
@@ -84,7 +80,6 @@ void connectWiFi() {
   Serial.println(WiFi.localIP());
 }
 
-
 void setup() {
   Serial.begin(115200);
   delay(1000);
@@ -100,7 +95,7 @@ void setup() {
 
   RTC.begin();
   syncRTCFromNTP();
-  Serial.println("ntp time from server setup");
+  Serial.println("ntp time from server setup completed");
 
   hsClient.setApiKey(apiKey);
   Serial.println("Hydroserver client is set up");
@@ -110,23 +105,18 @@ void loop() {
   unsigned long currentMillis = millis();
   if (currentMillis - previousMillis >= interval) {
     Serial.println("publishing the value");
-    double randomValue = random(0, 3000) / 10.0;
-    // double streamTempRandom = random(10, 20);
-    temperature.value = randomValue;
     previousMillis = currentMillis;
-    // streamTemperature.value = streamTempRandom;
+    double randomValue = random(0, 3000) / 10.0;
+    double streamTempRandom = random(10, 20);
+    temperature.value = randomValue;
+    streamTemperature.value = streamTempRandom;
 
-    // uint8_t size = sizeof(observations) / sizeof(observations[0]);
+    uint8_t size = sizeof(observations) / sizeof(observations[0]);
 
-    // hsClient.publishAll(observations, size, timestamp.c_str());
-    // Serial.println(timestamp);
-    hsClient.publishObservation(temperature, getISO8601Time());
-    Serial.println("status code for post request");
+    // Serial.println(hsClient.publishAll(observations,size,getISO8601Time()));
+    Serial.println(hsClient.publishObservation(temperature, getISO8601Time()));
+
     Serial.println(hsClient.getStatusCode());
     Serial.println(hsClient.getResponseBody());
-    // Serial.println(status);
-    Serial.println(randomValue);
-    Serial.println("................................................");
   };
-
 }

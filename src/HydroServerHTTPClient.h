@@ -18,7 +18,7 @@ public:
 
   void setApiKey(const char *apiKey);
 
-  int getStatusCode()const;
+  int getStatusCode() const;
 
   String getResponseBody() const;
   int publishObservation(const Observation &observation,
