@@ -14,8 +14,8 @@
 // This should be in the sketch folder
 #include "arduino_secrets.h"
 
-const char *ssid = WIFI_SSID;
-const char *password = WIFI_PASS;
+const char *ssid = "USU-guest";
+const char *password = 0;
 
 // MQTT broker details
 // You can use both url or ip address of mqtt broker.
@@ -156,7 +156,7 @@ void loop() {
     temperature.value = randomTemp;
     ph.value = randomPh;
     // To publish just one observation, use publishObservation() instead:
-    // mqttClient.publishObservation(temperature,getISO8601Time());
+    // mqttClient.publishObservation(temperature, getISO8601Time());
 
     // For publishing multiple observation at the same time
     uint8_t size = sizeof(observations) / sizeof(observations[0]);

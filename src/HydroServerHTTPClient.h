@@ -6,11 +6,11 @@
 #ifndef SRC_HYDROSERVERHTTPCLIENT_H_
 #define SRC_HYDROSERVERHTTPCLIENT_H_
 
-#include "DataPublisher.h"
+#include "PublisherUtil.h"
 #include <Arduino.h>
 #include <ArduinoHttpClient.h>
 
-class HydroServerHTTPClient : public DataPublisher {
+class HydroServerHTTPClient {
 public:
   HydroServerHTTPClient(
       Client &client, const char *hydroServerURL = "playground.hydroserver.org",
@@ -19,8 +19,16 @@ public:
   void setApiKey(const char *apiKey);
 
   String getResponseBody() const;
+
   int publishObservation(const Observation &observation,
-                         const char *phenomenonTime) override;
+                         const char *phenomenonTime);
+
+  void publishAll(Observation **observations, uint8_t size,
+                  const char *phenomenonTime) {
+    for (uint8_t i = 0; i < size; i++) {
+      publishObservation(*observations[i], phenomenonTime);
+    }
+  }
 
 private:
   HttpClient _httpClient;
