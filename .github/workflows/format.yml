@@ -14,6 +14,7 @@ on:
 jobs:
   clang-format-checking:
     runs-on: ubuntu-latest
+    timeout-minutes: 1
     steps:
       - uses: actions/checkout@v5
       - uses: RafikFarhad/clang-format-github-action@v6
