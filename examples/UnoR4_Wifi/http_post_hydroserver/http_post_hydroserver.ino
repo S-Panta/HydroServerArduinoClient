@@ -3,39 +3,64 @@
 #include <HydroServerHTTPClient.h>
 #include <WiFiS3.h>
 
-const char *ssid = "USU-guest";
-const char *password = 0;
-
-unsigned long lastPostTime = 0;
-const unsigned long postInterval = 20000;
-int currentHour = 3;
+const char *ssid = WIFI_SSID;
+const char *password = WIFI_PASS;
 
 // // for playground
 const char *apiKey = PLAYGROUND_API_KEY;
 const char *datastreamId = "019f246b-c5b9-7b45-aac6-261adc526b55";
 const char *serverAddress = "playground.hydroserver.org";
 const int serverPort = 443;
+WiFiClient wifiClient;
+WiFiSSLClient sslClient;
+HydroServerHTTPClient hsClient(sslClient, serverAddress, serverPort);
 
 // for local
 // const char *serverAddress = "144.39.67.171";
 // const int serverPort = 80;
 // const char *apiKey = LOCAL_API_KEY;
 // const char *datastreamId = "019eae3f-3450-70db-b5d2-a55879b4d681";
-
-// for playground instance
-WiFiClient wifiClient;
-WiFiSSLClient sslClient;
-HydroServerHTTPClient hsClient(sslClient, serverAddress, serverPort);
-
-// for local instance
 // WiFiClient wifiClient;
 // HydroServerHTTPClient hsClient(wifiClient, serverAddress, serverPort);
+
+const long interval = 30000;
+unsigned long previousMillis = 0;
 
 Observation temperature = {"Temperature", datastreamId};
 const char *streamTempDataStreamId = "019fa988-631d-7dc1-886f-b80431339ff7";
 Observation streamTemperature = {"StreamTemperature", streamTempDataStreamId};
 
 Observation *observations[] = {&temperature, &streamTemperature};
+
+// This is for realtime clock
+#include "RTC.h"
+#include <NTPClient.h>
+#include <WiFiUdp.h>
+WiFiUDP ntpUDP;
+
+NTPClient timeClient(ntpUDP, "north-america.pool.ntp.org");
+
+// Reads the RTC and convert into iso time
+char *getISO8601Time() {
+  RTCTime t;
+  RTC.getTime(t);
+  // static: buffer must outlive the function return
+  static char buf[25];
+  snprintf(buf, sizeof(buf), "%04d-%02d-%02dT%02d:%02d:%02dZ", t.getYear(),
+           Month2int(t.getMonth()), t.getDayOfMonth(), t.getHour(),
+           t.getMinutes(), t.getSeconds());
+  return buf;
+}
+
+// Must run after Wi-Fi is connected and before any publish
+void syncRTCFromNTP() {
+  timeClient.update();
+  unsigned long unixTime = timeClient.getEpochTime();
+  RTCTime timeToSet = RTCTime(unixTime);
+  RTC.setTime(timeToSet);
+  Serial.print("RTC set to: ");
+  Serial.println(timeClient.getFormattedTime());
+}
 
 // for arduino uno
 void connectWiFi() {
@@ -55,13 +80,6 @@ void connectWiFi() {
   Serial.println(WiFi.localIP());
 }
 
-String getNextTimestampISO8601() {
-  char buffer[25];
-  snprintf(buffer, sizeof(buffer), "2026-07-17T%02d:59:43Z", currentHour);
-  currentHour = (currentHour + 1) % 24;
-  return String(buffer);
-}
-
 void setup() {
   Serial.begin(115200);
   delay(1000);
@@ -71,25 +89,34 @@ void setup() {
   delay(3000);
 
   connectWiFi();
-  Serial.println("\nConnected!");
+
+  // setting time from server
+  timeClient.update();
+
+  RTC.begin();
+  syncRTCFromNTP();
+  Serial.println("ntp time from server setup completed");
+
   hsClient.setApiKey(apiKey);
   Serial.println("Hydroserver client is set up");
-  Serial.println("posting to hydroserver");
 }
 
 void loop() {
-  Serial.println("publishing the value");
-  double randomValue = random(0, 3000) / 10.0;
-  double streamTempRandom = random(10, 20);
-  String timestamp = getNextTimestampISO8601();
-  temperature.value = randomValue;
-  streamTemperature.value = streamTempRandom;
-  uint8_t size = sizeof(observations) / sizeof(observations[0]);
+  unsigned long currentMillis = millis();
+  if (currentMillis - previousMillis >= interval) {
+    Serial.println("publishing the value");
+    previousMillis = currentMillis;
+    double randomValue = random(0, 3000) / 10.0;
+    double streamTempRandom = random(10, 20);
+    temperature.value = randomValue;
+    streamTemperature.value = streamTempRandom;
 
-  hsClient.publishAll(observations, size, timestamp.c_str());
-  Serial.println(timestamp);
-  // int status = hsClient.publishObservation(temperature, timestamp.c_str());
-  // Serial.println(status);
-  // Serial.println(randomValue);
-  delay(6000);
+    uint8_t size = sizeof(observations) / sizeof(observations[0]);
+
+    // Serial.println(hsClient.publishAll(observations,size,getISO8601Time()));
+    Serial.println(hsClient.publishObservation(temperature, getISO8601Time()));
+
+    Serial.println(hsClient.getStatusCode());
+    Serial.println(hsClient.getResponseBody());
+  };
 }

@@ -35,11 +35,14 @@ public:
                                  const char *phenomenonTime) = 0;
 
   // todo: status of multiple publish should be stored somewhere
-  void publishAll(Observation **observations, uint8_t size,
+  bool publishAll(Observation **observations, uint8_t size,
                   const char *phenomenonTime) {
+
+    bool success = true;
     for (uint8_t i = 0; i < size; i++) {
-      publishObservation(*observations[i], phenomenonTime);
+      success &= publishObservation(*observations[i], phenomenonTime);
     }
+    return success;
   }
 
   virtual ~DataPublisher() = default;

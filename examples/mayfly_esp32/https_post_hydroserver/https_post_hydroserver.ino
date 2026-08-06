@@ -16,6 +16,9 @@ const char *datastreamId = "019f246b-c5b9-7b45-aac6-261adc526b55";
 const char *serverAddress = "playground.hydroserver.org";
 const int serverPort = 443;
 
+const long interval = 30000;
+unsigned long previousMillis = 0;
+
 ExpressifESP32 esp32(XbeeSerial, XBEE_PWR);
 ExpressifESP32 &modem = esp32;
 
@@ -56,6 +59,7 @@ void setup() {
   }
   Serial.println("Wifi is connected");
   delay(2000);
+
   Serial.println("setting time from server");
   uint32_t datetime = modem.getNISTTime();
   setupDateTimeFromServer(datetime);
@@ -73,12 +77,17 @@ void setup() {
 }
 
 void loop() {
-  Serial.println("posting to hydroserver");
-  double randomValue = random(35, 50);
-  temperature.value = randomValue;
-  int status = hsClient.publishObservation(temperature, getISO8601Time());
-  Serial.println(status);
-  Serial.print(hsClient.getResponseBody());
-  Serial.println(randomValue);
-  delay(30000);
+  unsigned long currentMillis = millis();
+  if (currentMillis - previousMillis >= interval) {
+    previousMillis = currentMillis;
+    Serial.println("posting to hydroserver");
+    double randomValue = random(3500, 5000) / 100.0;
+    temperature.value = randomValue;
+    int status = hsClient.publishObservation(temperature, getISO8601Time());
+    Serial.println(status);
+    Serial.println(hsClient.getStatusCode());
+    Serial.print(hsClient.getResponseBody());
+    Serial.println(randomValue);
+    Serial.println("..................................................");
+  }
 }
