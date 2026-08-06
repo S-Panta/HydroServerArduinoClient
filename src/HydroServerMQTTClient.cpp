@@ -95,7 +95,7 @@ int HydroServerMQTTClient::publishObservation(const Observation &observation,
   // value .In the absence of sending any other Control Packets, the Client MUST
   // send a PINGREQ Packet
 
-  String payload = createObservationPayload(observation, phenomenonTime);
+  String payload = ObservationPayload::serialize(observation, phenomenonTime);
 
   if (!_mqttClient.connected()) {
     // checks the tcp client. So if broker is disconnected,this will notify

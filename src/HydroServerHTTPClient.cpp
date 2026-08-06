@@ -21,7 +21,8 @@ void HydroServerHTTPClient::setApiKey(const char *apiKey) {
 
 int HydroServerHTTPClient::publishObservation(const Observation &observation,
                                               const char *phenomenonTime) {
-  String requestBody = createObservationPayload(observation, phenomenonTime);
+  String requestBody =
+      ObservationPayload::serialize(observation, phenomenonTime);
   _httpClient.beginRequest();
   _httpClient.post(_apiPath);
   _httpClient.sendHeader("accept", "*/*");

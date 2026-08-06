@@ -6,11 +6,11 @@
 #ifndef SRC_HYDROSERVERMQTTCLIENT_H_
 #define SRC_HYDROSERVERMQTTCLIENT_H_
 
+#include "PublisherUtil.h"
 #include <Arduino.h>
 #include <ArduinoMqttClient.h>
-#include <DataPublisher.h>
 
-class HydroServerMQTTClient : public DataPublisher {
+class HydroServerMQTTClient {
 public:
   static constexpr uint16_t defaultPort = 1883;
 
@@ -102,7 +102,14 @@ public:
 
   // publish Observation in json format
   int publishObservation(const Observation &observation,
-                         const char *phenomenonTime) override;
+                         const char *phenomenonTime);
+
+  void publishAll(Observation **observations, uint8_t size,
+                  const char *phenomenonTime) {
+    for (uint8_t i = 0; i < size; i++) {
+      publishObservation(*observations[i], phenomenonTime);
+    }
+  }
 
 private:
   MqttClient _mqttClient;
