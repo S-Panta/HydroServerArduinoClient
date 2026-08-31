@@ -33,7 +33,7 @@ public:
 
   void extraSetupForHTTPS(const char* host,const int port);
 
-  void extraSetupForMQTT() override;
+  void extraSetupForMQTT();
 
 private:
   TinyGsm _modem;

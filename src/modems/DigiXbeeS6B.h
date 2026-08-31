@@ -35,10 +35,14 @@ public:
 
   uint32_t getNISTTime() override;
 
-  void extraSetupForMQTT() override;
+  void extraSetupForMQTT(const char * host , uint16_t port);
 
+  // TinyGsm is exposed to public so that user can access other functionality tinygsm has
+  TinyGsm& getModem() { return _modem; };
+  
 private:
   TinyGsm _modem;
   StreamDebugger _debugger;
+  bool _changeXbeeConfig(const char * cmd,String newValue);
 };
 #endif
