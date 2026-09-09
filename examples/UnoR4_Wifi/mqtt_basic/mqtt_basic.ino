@@ -3,7 +3,7 @@
 //
 // Basic example: connect an Arduino Uno R4 WiFi board to a WiFi
 // network, connect to a MQTT broker, and publish
-// simulated sensor observations (temperature, pH) every 10 seconds.
+// simulated sensor observations (temperature, pH)
 //
 // This is meant as a minimal starting point — swap the random
 // values below for real sensor readings in your own project.
@@ -11,24 +11,24 @@
 
 // Wifi credentials
 // if you want to add wifi ssid and password from arduino_secrets
-// This should be in the sketch folder
+// arduino_secrets.h should be in same level as this sketch
 #include "arduino_secrets.h"
 
 const char *ssid = "USU-guest";
 const char *password = 0;
 
 // MQTT broker details
-// You can use both url or ip address of mqtt broker.
+// You can use either url or ip address of mqtt broker.
 // const char* MQTT_BROKER = "144.39.67.171";
 // const char *MQTT_BROKER = "test.mosquitto.org";
-const char *MQTT_BROKER = "raspberrypi1.mypc.usu.edu";
+// const char *MQTT_BROKER = "raspberrypi1.mypc.usu.edu";
+const char *MQTT_BROKER = "144.39.51.28";
 
-// How often (ms) to publish sensor data. Using millis()-based timing instead of
-// delay() so mqttClient.poll() can still run responsively in between.
+// data publish interval
 const long interval = 30000;
 unsigned long previousMillis = 0;
 
-// importing wifi driver specific to the Arduino Uno R4 board
+// importing wifi driver for Arduino Uno R4
 #include <WiFiS3.h>
 
 #include <HydroServerMQTTClient.h>
@@ -36,8 +36,7 @@ WiFiClient wifiClient;
 
 // Create the HydroServer MQTT client.
 // wificlient and broker address are necessary while other are optional
-// parameter by default, the broker port is 1883, so it is not necessary to pass
-// unless otherwise.
+// By default, the broker port is 1883.
 HydroServerMQTTClient mqttClient(wifiClient, MQTT_BROKER);
 
 // Observations to publish
@@ -45,8 +44,6 @@ HydroServerMQTTClient mqttClient(wifiClient, MQTT_BROKER);
 //   1. observedProperty — human-readable name of what's measured
 //   2. datastreamId     — UUID identifying the target datastream on HydroServer
 //   3. sensorId         — identifier for the physical sensor
-//   4. value            — the actual reading (defaults to 0.0, set later in
-//   loop())
 Observation temperature = {"temperature", "uuidtemperature", "tempsensorid"};
 Observation ph = {"pH", "uuidPh", "phsensorid"};
 
@@ -120,23 +117,23 @@ void setup() {
 
   // sitecode and client id are necessary setters. They are used in generating
   // topic for publishing observations observation is published as
-  // <sitecode>/<clientId>/<sensorId>/<observedProperty>/observations
+  // siteCode/clientId/sensorId/observedProperty
   mqttClient.setSiteCode("uwrl");
   mqttClient.setClientID("Arduinopublisher");
-  // optional mqtt parameters
-  // Optional: message the broker will publish if this device disconnects
-  // unexpectedly mqttClient.setLastWill("arduino uno is shutting down");
+  // The broker will publish last will message to the subscriber if this
+  // publisher device shut down
+  mqttClient.setLastWill("arduino uno is shutting down", true, 2);
+  Serial.println(mqttClient.getLastWillTopic());
 
-  // Optional: authenticate if your broker requires a username/password
+  // if your broker requires a username/password
   // mqttClient.setAuthentication("myUsername", "myPassword");
-
   if (!mqttClient.connectToBroker()) {
     Serial.println("Connection to Broker failed. Connection Error is");
     Serial.println(mqttClient.getConnectionError());
     while (1)
       ;
   };
-  Serial.println("connection successful");
+  Serial.println("connection to mqtt broker successful");
 }
 
 void loop() {
@@ -146,8 +143,7 @@ void loop() {
   unsigned long currentMillis = millis();
   if (currentMillis - previousMillis >= interval) {
     Serial.println("publishing every 30 seconds");
-    // Simulated sensor readings. This should be replaced with the real sensor
-    // measurement.
+    // Simulated sensor readings.
     float randomTemp, randomPh;
     randomTemp = random(200, 351) / 10.0;
     randomPh = random(1, 7);
@@ -155,11 +151,12 @@ void loop() {
 
     temperature.value = randomTemp;
     ph.value = randomPh;
-    // To publish just one observation, use publishObservation() instead:
-    // mqttClient.publishObservation(temperature, getISO8601Time());
+    mqttClient.publishObservation(temperature, getISO8601Time());
+    mqttClient.publishObservation(ph, getISO8601Time());
+    Serial.println(mqttClient.getObservationTopic(temperature));
 
-    // For publishing multiple observation at the same time
-    uint8_t size = sizeof(observations) / sizeof(observations[0]);
-    mqttClient.publishAll(observations, size, getISO8601Time());
+    // For publishing multiple observations at the same time
+    // uint8_t size = sizeof(observations) / sizeof(observations[0]);
+    // mqttClient.publishAll(observations, size, getISO8601Time());
   };
 }

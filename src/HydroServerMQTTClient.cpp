@@ -88,6 +88,22 @@ void HydroServerMQTTClient::setAuthentication(const char *username,
   }
 }
 
+const char *
+HydroServerMQTTClient::getObservationTopic(const Observation &observation) {
+
+  // topic construction is of format:
+  // “sitecode/deviceid/sensorid/observedproperty
+  // if all values of this function is not initalized, broker will response with
+  // malformed packet and mqtt connection will be terminated the first part
+  // _sitecode should be valid, if not valid, no topic will form. other value
+  // can be empty and mqtt works but not recommended
+  snprintf(_observationTopic, sizeof(_observationTopic), "%s/%s/%s/%s",
+           _sitecode, _clientId, observation.sensorId,
+           observation.observedProperty);
+
+  return _observationTopic;
+}
+
 int HydroServerMQTTClient::publishObservation(const Observation &observation,
                                               const char *phenomenonTime) {
   // MQTT-3.1.2-23 : It is the responsibility of the Client to ensure that the
@@ -106,15 +122,7 @@ int HydroServerMQTTClient::publishObservation(const Observation &observation,
   // true beginMessage(topic, size, retain, qos, dup); to-do : Since default
   // payload limit is 256, research on how that be increased
 
-  // topic construction is of format:
-  // “sitecode/deviceid/sensorid/observedproperty
-  char topic[256];
-  // if all values of this topic is not initalized, broker will response with
-  // malformed packet and mqtt connection will be terminated the first part
-  // _sitecode should be valid, if not valid, no topic will form. other value
-  // can be empty and mqtt works but not recommended
-  snprintf(topic, sizeof(topic), "%s/%s/%s/%s", _sitecode, _clientId,
-           observation.sensorId, observation.observedProperty);
+  const char *topic = getObservationTopic(observation);
   _mqttClient.beginMessage(topic, (unsigned long)payload.length());
   _mqttClient.print(payload);
   // only under qos 1 and 2 will return code from endmessage be 0 when message
@@ -123,15 +131,19 @@ int HydroServerMQTTClient::publishObservation(const Observation &observation,
   return _mqttClient.endMessage();
 }
 
-int HydroServerMQTTClient::setLastWill(const char *payload) {
+int HydroServerMQTTClient::setLastWill(const char *payload, bool retain,
+                                       int qos) {
   size_t payloadLength = strlen(payload);
-  char lastWillTopic[128];
-  snprintf(lastWillTopic, sizeof(lastWillTopic), "%s/%s/lwt", _sitecode,
+  snprintf(_lastWillTopic, sizeof(_lastWillTopic), "%s/%s/lwt", _sitecode,
            _clientId);
   // to do : implement retain and qos
-  _mqttClient.beginWill(lastWillTopic, payloadLength, true, 1);
+  _mqttClient.beginWill(_lastWillTopic, payloadLength, retain, qos);
   _mqttClient.print(payload);
   return _mqttClient.endWill();
+}
+
+const char *HydroServerMQTTClient::getLastWillTopic() const {
+  return _lastWillTopic;
 }
 
 int HydroServerMQTTClient::getConnectionError() {
