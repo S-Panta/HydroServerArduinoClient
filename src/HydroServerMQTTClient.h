@@ -28,7 +28,7 @@ public:
 
   // Sets the site code used as the first segment of the MQTT topic path
   // for published observations and the last will message.
-  // e.g "<siteCode>/<clientId>/<sensorId>/<observedProperty>/observations".
+  // e.g "siteCode/clientId/sensorId/observedProperty".
   // See site metadata detail
   // :https://hydroserver.org/user-guides/how-to/managing-site-metadata.html#managing-site-metadata
   // This must be called before connectToBroker() / publishObservation()
@@ -41,7 +41,9 @@ public:
 
   // If the client disconnects unexpectly,this will define the final message
   // the message will be published in sitecode/device_id/lwt topic
-  int setLastWill(const char *payload);
+  // it is recommended that last will qos be atleast 1.
+  int setLastWill(const char *payload, bool retain = true, int qos = 1);
+  const char *getLastWillTopic() const;
 
   // cleanSession=true: broker discards prior subscriptions/queued messages for
   // this client on reconnect. use setClientID before setting this to true
@@ -104,6 +106,8 @@ public:
   int publishObservation(const Observation &observation,
                          const char *phenomenonTime);
 
+  const char *getObservationTopic(const Observation &observation);
+
   void publishAll(Observation **observations, uint8_t size,
                   const char *phenomenonTime) {
     for (uint8_t i = 0; i < size; i++) {
@@ -124,6 +128,8 @@ private:
   bool _cleanSession = false;
   const char *_sitecode;
   float _latestValue;
+  char _observationTopic[256];
+  char _lastWillTopic[128];
 };
 
 #endif
