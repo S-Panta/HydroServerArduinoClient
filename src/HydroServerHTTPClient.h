@@ -18,10 +18,12 @@ public:
 
   void setApiKey(const char *apiKey);
 
-  String getResponseBody() const;
+  String getLastResponseBody() const;
 
-  int publishObservation(const Observation &observation,
-                         const char *phenomenonTime);
+  bool isDatastreamAvailable(const char *datastreamid);
+
+  bool publishObservation(const Observation &observation,
+                          const char *phenomenonTime);
 
   void publishAll(Observation **observations, uint8_t size,
                   const char *phenomenonTime) {
@@ -33,8 +35,8 @@ public:
 private:
   HttpClient _httpClient;
   const char *_apiKey;
-  const char *_apiPath = "/api/sensorthings/v1.1/Observations";
   String _responseBody;
+  int _sendRequest(const char *method, const String &path, const String &body);
 };
 
 #endif
