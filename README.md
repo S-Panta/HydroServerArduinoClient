@@ -33,9 +33,8 @@ Both client will publish the observation into same JSON format.
 ```
 ### Quick Start for HydroServerMQTTClient
 - Clone this github repo into `Arduino/libraries`.
-- This library depends on ArduinoJson and TinyGsm. You can install ArduinoJson from Libary Manager from ArduinoIDE.
-- Don't install TinyGSM from Library Manager as this uses forked version developed by EnviroDIY. Clone TinyGSM into `Arduino/libraries` folder. (https://github.com/EnviroDIY/TinyGSM)
-
+- Install ArduinoJson, ArduinoMQTTClient and ArduinoHTTPClient from Libraries within IDE.
+- Install TinyGsm(https://github.com/EnviroDIY/TinyGSM) and StreamDebugger(https://github.com/EnviroDIY/StreamDebugger) from the github. You can directly clone them into `Arduino/libraries` folder.
 For testing the library, you can use free mosquitto broker available online `https://test.mosquitto.org/`.
 Make sure to subscribe to the topic that you published to. Because this is commercially available, subscribing to all published topic using wildcard ("#") will result in getting all published message in the broker.
 Look at `examples/UnoR4_Wifi/Uno_mqtt_basic.ino` for simple example on how to use HydroServerMQTTClient for publishing message to a running MQTT broker.
