@@ -29,6 +29,8 @@ public:
 
   bool isInternetAvailable() override;
 
+  String getLocalIP() { return _modem.localIP().toString(); }
+
   uint32_t getNISTTime() override;
 
   void extraSetupForHTTPS(const char* host,const int port);
