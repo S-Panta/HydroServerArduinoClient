@@ -29,8 +29,7 @@ HydroServerMQTTClient mqttClient(*modem.createClient(), MQTT_BROKER);
 
 Observation temperature;
 
-// --- interval publishing (ModularSensors-style) ---
-const uint32_t loggingIntervalMinutes = 1;  // change to 5, 15, etc. as needed
+const uint32_t loggingIntervalMinutes = 1;
 uint32_t lastPublishedEpoch = 0;
 
 void setupDateTimeFromServer(uint32_t unix_time) {

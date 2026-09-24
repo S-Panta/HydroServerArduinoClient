@@ -44,21 +44,17 @@ ProcessorStats mcuBoard(mcuBoardVersion);
 #include <sensors/MaximDS3231.h>
 MaximDS3231 ds3231(1);
 
-// ==========================================================================
-//  Variable array
-// ==========================================================================
+
 Variable* variableList[] = {
-    new ProcessorStats_SampleNumber(&mcuBoard),  // [0]
-    new MaximDS3231_Temp(&ds3231,tempDataStreamId)                 // [1]
+    new ProcessorStats_SampleNumber(&mcuBoard),  
+    new MaximDS3231_Temp(&ds3231,tempDataStreamId)               
 };
 
 int variableCount = sizeof(variableList) / sizeof(variableList[0]);
 VariableArray varArray;
 Logger        dataLogger;
 
-// ==========================================================================
-//  Helpers
-// ==========================================================================
+
 void greenRedFlash(uint8_t numFlash = 4, uint8_t rate = 75) {
     for (uint8_t i = 0; i < numFlash; i++) {
         digitalWrite(greenLED, HIGH);
@@ -81,9 +77,7 @@ void publishCycle() {
                                 : F("Publish cycle failed — will retry next interval"));
 }
 
-// ==========================================================================
-//  Setup
-// ==========================================================================
+
 void setup() {
     Serial.begin(serialBaud);
     delay(1000);
@@ -101,7 +95,6 @@ void setup() {
     digitalWrite(redLED, LOW);
     greenRedFlash();
 
-    // ---- One-time RTC sync from NIST time, then power modem down ----
     XbeeSerial.begin(modemBaud);
     modem.powerUp();
     delay(1000);
@@ -119,7 +112,6 @@ void setup() {
     }
 
     modem.extraSetupForMQTT();
-    // Local MQTT client config — no live connection needed for this
     mqttClient.setSiteCode("uwrl");
     mqttClient.setClientID("MayFlyLogger");
     mqttClient.setLastWill("Mayfly Logger shutting down");
@@ -139,7 +131,6 @@ void setup() {
     boardTempObs.sensorId         = "boardtemp-sensor-id";
     boardTempObs.observedProperty = "temperature_celsius";
 
-    // ---- ModularSensors init ----
     Logger::setLoggerTimeZone(timeZone);
     loggerClock::setRTCOffset(0);
 
