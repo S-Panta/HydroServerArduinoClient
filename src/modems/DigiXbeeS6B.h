@@ -31,7 +31,7 @@ public:
   bool connectToInternet(const char *ssid, const char *password,
                          uint32_t maxConnectionTime = 60000L) override;
 
-  String getLocalIP() { return _modem.localIP().toString(); }
+  // String getLocalIP() { return _modem.localIP().toString(); }
 
   bool isInternetAvailable() override;
 

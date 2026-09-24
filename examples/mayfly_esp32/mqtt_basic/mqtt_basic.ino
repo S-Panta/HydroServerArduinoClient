@@ -29,16 +29,16 @@ HydroServerMQTTClient mqttClient(*modem.createClient(), MQTT_BROKER);
 
 Observation temperature;
 
-unsigned long lastPublishTime = 0;
-const unsigned long publishInterval = 10000;
+// --- interval publishing (ModularSensors-style) ---
+const uint32_t loggingIntervalMinutes = 1;  // change to 5, 15, etc. as needed
+uint32_t lastPublishedEpoch = 0;
 
 void setupDateTimeFromServer(uint32_t unix_time) {
   rtc.begin();
   rtc.setDateTime(unix_time);
 }
 
-char *getISO8601Time() {
-  DateTime now = rtc.now();
+char *getISO8601Time(DateTime &now) {
   // create a temporary buffer to put the timestamp into
   static char buf[25];
   snprintf(buf, sizeof(buf), "%04d-%02d-%02dT%02d:%02d:%02dZ", now.year(),
@@ -74,6 +74,7 @@ void setup() {
   Serial.println("Initializing broker connection");
   mqttClient.setSiteCode("uwrl");
   mqttClient.setClientID("Arduinopublisher");
+  mqttClient.setKeepAliveInterval(100);
   if (!mqttClient.connectToBroker()) {
     Serial.println("Cannot connect to Broker. Connection Error is ");
     Serial.println(mqttClient.getConnectionError());
@@ -91,13 +92,22 @@ void setup() {
 
 void loop() {
   mqttClient.poll();
-  unsigned long now = millis();
-  if (now - lastPublishTime >= publishInterval) {
-    lastPublishTime = now;
+
+  DateTime now = rtc.now();
+  uint32_t markedEpochTime = now.getEpoch();
+
+  // fires exactly on the clock boundary (e.g. :00 of every interval-th minute)
+  bool onInterval =
+      (markedEpochTime != 0) &&
+      (markedEpochTime % (loggingIntervalMinutes * 60) == 0);
+
+  // guard so we only publish once per boundary, not for the whole second
+  if (onInterval && markedEpochTime != lastPublishedEpoch) {
+    lastPublishedEpoch = markedEpochTime;
 
     float randomTemp = random(20, 25);
     temperature.value = randomTemp;
-    mqttClient.publishObservation(temperature, getISO8601Time());
+    mqttClient.publishObservation(temperature, getISO8601Time(now));
 
     Serial.println("published");
   }
