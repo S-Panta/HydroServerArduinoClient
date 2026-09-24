@@ -1,349 +1,440 @@
-# HydroServerMQTTClient API Reference
+# API Reference
 
-A lightweight Arduino wrapper on top of ArduinoMqttClient for publishing observation to Hydroserver. The observations are formatted according to OGC Sensorthing requirement.
+Complete reference for the public API of **HydroServerArduinoClient**.
 
-## Constructors
+- [Observation and payload](#observation-and-payload) — `PublisherUtil.h`
+- [HydroServerMQTTClient](#hydroservermqttclient) — `HydroServerMQTTClient.h`
+- [HydroServerHTTPClient](#hydroserverhttpclient) — `HydroServerHTTPClient.h`
+- [Modem wrappers](#modem-wrappers) — `modems/modem.h`, `modems/ExpressifESP32.h`, `modems/DigiXbeeS6B.h`
 
-### `HydroServerMQTTClient()`
-
-Creates a new client bound to an existing network `Client` object
-(e.g. from a modem or WiFi shield), with optional broker connection
-details.
-
-    HydroServerMQTTClient(Client& client, const char* broker, uint16_t port, const char* clientId, const char* username, const char* password)
-    HydroServerMQTTClient(Client& client)
-
-**Parameters**
-
-- `client` — a reference to an already-configured network `Client`
-  (e.g. from `DigiXBeeWifi`, a WiFi101 shield, or any class
-  implementing the Arduino `Client` interface)
-- `broker` — hostname or IP of the MQTT broker; may be `nullptr` and
-  set later via `connectToBroker()`
-- `port` — broker TCP port; defaults to `1883`
-- `clientId` — MQTT client identifier; optional
-- `username` — optional broker username
-- `password` — optional broker password
-
-The short-form constructor (`Client&` only) creates an uninitialised client instances. Before using this for mqtt, it must be configured with the setters by passing them either to `connectToBroker()` or the respective setters.
+For installation and a guided walkthrough, see the [README](../README.md). For how the pieces fit together, see [architecture.md](architecture.md).
 
 ---
 
-## Connection
+## Observation and payload
 
-### `connectToBroker()`
-
-Connects to the broker using previously configured values.
-
-    int connectToBroker()
-
-Applies keep-alive interval, connection timeout, and clean-session
-flag, then attempts the connection.
-
-**Returns**
-
-- `0` if no broker has been configured (`_broker == nullptr`)
-- Otherwise, the result of the underlying `MqttClient::connect()`
-  call — non-zero generally indicates success; use
-  `getConnectionError()` for the specific failure code on failure
-
----
-
-### `connectToBroker(broker, port, clientId, username, password)`
-
-Sets broker connection details, then connects. This can be used when HydroServerMQTTClient is initialized only with client interface.
-
-    int connectToBroker(const char* broker, uint16_t port, const char* clientId, const char* username, const char* password)
-
-**Parameters**
-
-- `broker` — hostname or IP of the MQTT broker
-- `port` — broker TCP port
-- `clientId` — MQTT client identifier; if `nullptr`, any previously
-  set ID is retained
-- `username` — optional broker username
-- `password` — optional broker password
-
-**Returns**
-
-- Same as the no-argument `connectToBroker()`
-
-**Note:** if you are calling this to change credentials on an
-already-constructed client, verify the new credentials are actually
-applied — as currently written, credential reassignment on this path
-should be checked against the parameters passed in, not prior state.
-
----
-
-### `isConnected()`
-
-Checks whether the client currently has an active broker connection.
-
-    bool isConnected()
-
-**Returns**
-
-- `true` if connected, `false` otherwise
-
----
-
-### `getConnectionError()`
-
-Retrieves the most recent connection error code.
-
-    int getConnectionError()
-
-**Returns**
-
-- An error code as defined by `MqttClient::connectError()`; `0`
-  generally indicates no error
-
----
-
-## Configuration
-
-### `setClientID()`
-
-Sets the MQTT client identifier used on connect.
-
-    void setClientID(const char* clientId)
-
-**Parameters**
-
-- `clientId` — the client ID string; ignored if `nullptr`. Lowercase client id is preferred as it will be used to build mqtt messahe publish topic.
-
----
-
-### `setAuthentication()`
-
-Sets the username and password used on connect.
-
-    void setAuthentication(const char* username, const char* password)
-
-**Parameters**
-
-- `username` — broker username
-- `password` — broker password
-
-Both must be non-null for either to be applied.
-
----
-
-### `setCleanSession()`
-
-Controls whether the broker discards client state on disconnect.
-
-    void setCleanSession(bool cleanSession)
-
-**Parameters**
-
-- `cleanSession` — `true` starts a non-persistent session (broker
-  discards state on disconnect); `false` requests the broker retain
-  session state across reconnects. Only meaningful for QoS ≥ 1;
-  irrelevant for QoS 0 messages.
-
----
-
-### `setKeepAliveInterval()`
-
-Sets the MQTT keep-alive interval.
-
-    void setKeepAliveInterval(unsigned long seconds)
-
-**Parameters**
-
-- `seconds` — time between keep-alive pings sent to the broker
-
----
-
-### `setConnectionTimeout()`
-
-Sets how long to wait for the broker connection to establish.
-
-    void setConnectionTimeout(unsigned long timeout)
-
-**Parameters**
-
-- `timeout` — timeout in seconds; not part of the MQTT spec itself,
-  governs the underlying TCP/network connection attempt
-
----
-
-## Publishing
-
-### `publishObservation()`
-
-Publishes a single observation, formatted per the OGC
-SensorThings API.
-
-    int publishObservation(const Observation &observation, const char* phenomenonTime)
-
-**Parameters**
-
-- `Observation` — Observation struct of SensorThings Datastream defined in DataPublisher class.
-  ```
-      struct Observation {
-      const char *observedProperty;
-      const char *datastreamId;
-      const char *sensorId;
-      double value = 0.0;
-    };
-  ```
-    - observedProperty : Name or URI of the property being observed
-    - datastreamId : ID of the SensorThings Datastream this observation belongs to
-    - sensorId : ID of the sensor that produced the observation
-    - value : Measured value of the observation (default: 0.0)
-- `phenomenonTime` — ISO 8601 timestamp of when the observation was taken
-
-Builds a JSON payload (`phenomenonTime`, `result`,
-`Datastream.@iot.id`) and publishes it to a topic derived from the
-datastream ID.
-
-**Returns**
-
-- Result of the underlying publish call — non-zero generally
-  indicates success
-
-**Note:** confirm the topic path used matches the exact resource
-naming your HydroServer SensorThings endpoint expects
-(singular vs. plural collection name) — a mismatch here will not
-raise an MQTT-level error, only a downstream ingestion failure.
-
----
-
-### `publishAll()`
-
-Publishes a batch of observations in one call.
-
-    void publishAll(DataStream** datastreams, uint8_t count, const char* phenomenonTime)
-
-**Parameters**
-
-- `datastreams` — array of pointers to `DataStream` objects to
-  publish
-- `count` — number of entries in `datastreams`
-- `phenomenonTime` — timestamp applied to all observations in this
-  batch
-
-Internally calls `publishObservation()` once per entry. Individual
-publish failures are not surfaced — this method does not return a
-status.
-
----
-### `setSiteCode()`
-
-```
-void setSiteCode(const char *siteCode);
+```cpp
+#include <PublisherUtil.h>   // included automatically by both clients
 ```
 
-Sets the site code used as the first segment of the MQTT topic path for published observations and for the last will message, e.g. <siteCode>/<clientId>/<sensorId>/<observedProperty>/observations.
+### `struct Observation`
 
-**Parameters**
-- siteCode : Site code identifying the deployment location
+One sensor reading.
 
----
+```cpp
+struct Observation {
+  const char *observedProperty;
+  const char *datastreamId;
+  const char *sensorId;
+  double value = 0.0;
+};
+```
 
-### `setLastWill()`
+| Field | Description | Used in |
+| --- | --- | --- |
+| `observedProperty` | Name of what is measured, e.g. `"temperature"`. | MQTT topic |
+| `datastreamId` | UUID of the HydroServer / SensorThings datastream the value belongs to. | Payload |
+| `sensorId` | Your identifier for the physical sensor. | MQTT topic |
+| `value` | The measured value. Defaults to `0.0`. | Payload (`result`) |
 
-Registers a Last Will and Testament message with the broker.
+The struct stores **pointers**, not copies. Strings you assign must stay valid for as long as the observation is used — string literals and global/static buffers are safe; local `char` arrays inside a function are not.
 
-    int setLastWill(const char* payload)
+```cpp
+Observation temperature = {"temperature", "019f246b-...", "temp-sensor-1"};
+temperature.value = 21.7;
+```
 
-**Parameters**
+### `ObservationPayload::serialize()`
 
-- `payload` — the will message content
+```cpp
+String ObservationPayload::serialize(const Observation &observation, const char *phenomenonTime);
+```
 
-The broker publishes this message automatically if the client fails
-to send a clean disconnect and the keep-alive interval elapses.
+Builds the JSON body both clients send. You normally don't call this yourself.
 
-**Returns**
+```json
+{
+  "Datastream": { "@iot.id": "<datastreamId>" },
+  "result": "value",
+  "phenomenonTime": "phenomenonTime"
+}
+```
 
-- Declared as `int`
-
----
-
-## Subscribing
-
-### `subscribe()`
-
-Subscribes to a topic.
-
-    int subscribe(const char* topic)
-
-**Parameters**
-
-- `topic` — the MQTT topic to subscribe to
-
-**Returns**
-
-- `0` if not currently connected to the broker
-- Otherwise, the result of the underlying subscribe call
-
-**Note:** subscribes at QoS 0 by default; there is currently no
-parameter to request QoS 1 and QoS 2 on subscribe.
-
----
-
-### `unsubscribe()`
-
-Unsubscribes from a topic.
-
-    int unsubscribe(const char* topic)
-
-**Parameters**
-
-- `topic` — the MQTT topic to unsubscribe from
-
-**Returns**
-
-- Result of the underlying unsubscribe call
+`phenomenonTime` should be an ISO 8601 UTC string, e.g. `"2026-09-23T18:30:00Z"`. The library does not validate it.
 
 ---
 
-### `onMessage()`
+## HydroServerMQTTClient
 
-Registers a callback invoked when a message arrives on a subscribed
-topic.
+```cpp
+#include <HydroServerMQTTClient.h>
+```
 
-    void onMessage(void (*callback)(int))
+A thin wrapper around [ArduinoMqttClient](https://github.com/arduino-libraries/ArduinoMqttClient) that publishes `Observation`s as SensorThings JSON and builds topics for you.
 
-**Parameters**
+### Topic format
 
-- `callback` — function pointer invoked with the size (in bytes) of
-  the incoming message payload
+| Purpose | Topic |
+| --- | --- |
+| Observation | `<siteCode>/<clientId>/<sensorId>/<observedProperty>` |
+| Last Will | `<siteCode>/<clientId>/lwt` |
+| Subscription | `<siteCode>/<topic you pass to subscribe()>` |
+
+Topics are limited to 255 characters (observations) and 127 characters (Last Will).
+
+### Constants
+
+| Name | Value | Meaning |
+| --- | --- | --- |
+| `HydroServerMQTTClient::defaultPort` | `1883` | Standard unencrypted MQTT port. |
+
+### Defaults
+
+| Setting | Default |
+| --- | --- |
+| Keep-alive interval | 60 s |
+| Connection timeout | 20 s |
+| Clean session | `false` (persistent session) |
+| Subscribe QoS | 0 |
+| Publish QoS | 0 |
+| Last Will retain / QoS | `true` / 1 |
 
 ---
 
-### `poll()`
+### Constructors
 
-Processes incoming messages and maintains the connection.
+#### `HydroServerMQTTClient(Client &client, const char *broker, uint16_t port = 1883, const char *clientId = nullptr, const char *username = nullptr, const char *password = nullptr)`
 
-    void poll()
+Creates a client with its broker details up front. Only `client` and `broker` are required.
 
-Must be called regularly (e.g. in the main loop) for subscriptions
-and keep-alive to function correctly.
+| Parameter | Description |
+| --- | --- |
+| `client` | Any object implementing Arduino's `Client` interface (`WiFiClient`, or `*modem.createClient()` on the Mayfly). Must outlive the MQTT client. |
+| `broker` | Broker hostname or IP address. |
+| `port` | Broker port. |
+| `clientId` | MQTT client ID. Also used in topics. If omitted, ArduinoMqttClient generates a random ID on each connect — set one with `setClientID()` instead. |
+| `username`, `password` | Optional broker login. Applied only if `username` is non-empty and `password` is non-null. |
+
+```cpp
+WiFiClient wifiClient;
+HydroServerMQTTClient mqttClient(wifiClient, "test.mosquitto.org");
+```
+
+#### `HydroServerMQTTClient(Client &client)`
+
+Creates a client with no broker set. Supply the broker later with `connectToBroker(broker, ...)`.
 
 ---
 
-### `readMessage()`
+### Configuration
 
-Reads the payload of the most recently received message.
+Call these **before** `connectToBroker()`.
 
-    String readMessage()
+#### `void setSiteCode(const char *siteCode)`
 
-**Returns**
+Sets the first segment of every topic. **Required** — without it, topics are malformed and the broker will drop the connection on publish. Use the site code from your HydroServer site ([site metadata guide](https://hydroserver.org/user-guides/how-to/managing-site-metadata.html#managing-site-metadata)).
 
-- The message payload as a `String`, built by reading all currently
-  available bytes
+#### `void setClientID(const char *clientId)`
+
+Sets the MQTT client ID. Ignored if `nullptr` or empty. The ID should be unique on the broker and is used in topics, so a short lowercase string is recommended. A fixed ID is needed for persistent sessions.
+
+#### `void setAuthentication(const char *username, const char *password)`
+
+Sets broker credentials. Ignored unless `username` is non-empty and `password` is non-null (an empty password `""` is allowed).
+
+#### `void setCleanSession(bool cleanSession)`
+
+- `true` — the broker forgets this client's subscriptions and queued messages when it disconnects.
+- `false` (default) — the broker keeps them for the next connection with the same client ID.
+
+Only matters for QoS 1/2 messages. Set a client ID first.
+
+#### `void setKeepAliveInterval(unsigned long seconds)`
+
+How often the client pings the broker when idle. The broker disconnects the client after roughly 1.5× this interval of silence. Default 60 s.
+
+#### `void setConnectionTimeout(unsigned long seconds)`
+
+How long to wait for the network connection to the broker. Default 20 s.
+
+#### `int setLastWill(const char *payload, bool retain = true, int qos = 1)`
+
+Registers a Last Will message. If the client disappears without disconnecting cleanly (power loss, lost Wi-Fi), the broker publishes `payload` to `<siteCode>/<clientId>/lwt`. Call after `setSiteCode()`/`setClientID()` and before connecting.
+
+| Parameter | Description |
+| --- | --- |
+| `payload` | Message text, e.g. `"offline"`. |
+| `retain` | Keep the message on the broker for late subscribers. |
+| `qos` | Delivery guarantee; at least 1 is recommended. |
+
+**Returns** the result of ArduinoMqttClient's `endWill()`.
+
+#### `const char *getLastWillTopic() const`
+
+Returns the Last Will topic built by `setLastWill()`. Handy for printing or for publishing an "online" message to the same topic after connecting.
 
 ---
 
-### `messageTopic()`
+### Connection
 
-Gets the topic of the most recently received message.
+#### `int connectToBroker()`
 
-    String messageTopic()
+Connects using the settings already configured. Applies client ID, credentials, keep-alive, timeout and clean-session flag first.
 
-**Returns**
+**Returns** `0` if no broker is set or the connection fails; non-zero on success. On failure, call `getConnectionError()`.
 
-- The topic string of the current incoming message
+```cpp
+if (!mqttClient.connectToBroker()) {
+  Serial.println(mqttClient.getConnectionError());
+}
+```
+
+#### `int connectToBroker(const char *broker, uint16_t port = 1883, const char *clientId = nullptr, const char *username = nullptr, const char *password = nullptr)`
+
+Sets the broker (and optionally the other details), then connects. `nullptr`/empty `clientId` or credentials leave previously set values unchanged.
+
+#### `bool isConnected()`
+
+`true` if the connection to the broker is open.
+
+#### `int getConnectionError()`
+
+The error code from the last connection attempt (ArduinoMqttClient's `connectError()`):
+
+| Code | Meaning |
+| --- | --- |
+| `-2` | Connection refused (network level) |
+| `-1` | Timed out |
+| `0` | Success |
+| `1` | Unacceptable protocol version |
+| `2` | Client ID rejected |
+| `3` | Server unavailable |
+| `4` | Bad username or password |
+| `5` | Not authorized |
+
+#### `void poll()`
+
+Sends keep-alive pings and delivers incoming messages. **Call it on every pass through `loop()`.** Without it, the broker eventually disconnects the client and `onMessage` callbacks never run.
+
+---
+
+### Publishing
+
+#### `int publishObservation(const Observation &observation, const char *phenomenonTime)`
+
+Publishes one observation to `<siteCode>/<clientId>/<sensorId>/<observedProperty>`.
+
+**Returns** `0` if not connected. Otherwise the result of `endMessage()` — non-zero means the message was handed to the network. Publishing uses QoS 0, so this does **not** confirm the broker received it.
+
+#### `void publishAll(Observation **observations, uint8_t size, const char *phenomenonTime)`
+
+Publishes several observations with the same timestamp. Individual failures are not reported.
+
+```cpp
+Observation *all[] = {&temperature, &ph};
+mqttClient.publishAll(all, 2, getISO8601Time());
+```
+
+#### `const char *getObservationTopic(const Observation &observation)`
+
+Returns the topic an observation would be published to. The returned pointer refers to an internal buffer that is overwritten by the next call or publish — copy it if you need to keep it.
+
+---
+
+### Subscribing
+
+#### `int subscribe(const char *topic)`
+
+Subscribes to `<siteCode>/<topic>` at QoS 0.
+
+**Returns** `0` if not connected; otherwise the result of the underlying subscribe.
+
+```cpp
+mqttClient.setSiteCode("uwrl");
+mqttClient.subscribe("python_publisher/sensorid/temperature_celsius");
+// subscribed to: uwrl/python_publisher/sensorid/temperature_celsius
+```
+
+#### `int unsubscribe(const char *topic)`
+
+Unsubscribes from `topic`. Unlike `subscribe()`, the site code is **not** added — pass the full topic.
+
+#### `void onMessage(void (*callback)(int))`
+
+Registers a function to run whenever a message arrives on a subscribed topic. The callback receives the payload size in bytes and runs from inside `poll()`.
+
+```cpp
+void messageReceived(int size) {
+  Serial.println(mqttClient.messageTopic());
+  Serial.println(mqttClient.readMessage());
+}
+mqttClient.onMessage(messageReceived);
+```
+
+#### `String messageTopic()`
+
+Topic of the message currently being handled.
+
+#### `String readMessage()`
+
+Reads and returns the whole payload of the current message. The payload can only be read once — use either `readMessage()` or `deserializePayload()`, not both.
+
+#### `void deserializePayload()`
+
+Parses the current message as an observation JSON payload and stores its `result` field. Call inside your `onMessage` callback.
+
+#### `float getLatestValueofTopic(const char *topic)`
+
+Returns the value stored by `deserializePayload()` if the current message's topic equals `<siteCode>/<topic>`. If the topic doesn't match, the return value is undefined — only call it for topics you know the message came from.
+
+```cpp
+void messageReceived(int size) {
+  mqttClient.deserializePayload();
+  Serial.println(mqttClient.getLatestValueofTopic("python_publisher/sensorid/temperature_celsius"));
+}
+```
+
+---
+
+## HydroServerHTTPClient
+
+```cpp
+#include <HydroServerHTTPClient.h>
+```
+
+Sends observations straight to a HydroServer instance through its SensorThings API, using [ArduinoHttpClient](https://github.com/arduino-libraries/ArduinoHttpClient). Each request sends these headers:
+
+```
+Accept: */*
+X-Api-Key: <apiKey>
+Content-Type: application/json
+```
+
+### Endpoints used
+
+| Method | Path | Used by |
+| --- | --- | --- |
+| `POST` | `/api/sensorthings/v1.1/Observations` | `publishObservation()` |
+| `GET` | `/api/sensorthings/v1.1/Datastreams('<id>')` | `isDatastreamAvailable()` |
+
+---
+
+### Constructor
+
+#### `HydroServerHTTPClient(Client &client, const char *hydroServerURL = "playground.hydroserver.org", uint16_t port = 443, const char *apiKey = nullptr)`
+
+| Parameter | Description |
+| --- | --- |
+| `client` | Network client. For port 443 it must be a TLS client (e.g. `WiFiSSLClient` on the Uno R4, `*modem.createSecureClient()` on the Mayfly ESP32). Must outlive the HTTP client. |
+| `hydroServerURL` | HydroServer hostname, without `https://`. |
+| `port` | `443` for HTTPS, `80` for plain HTTP. |
+| `apiKey` | HydroServer API key with write access to your datastreams. Can also be set with `setApiKey()`. |
+
+HTTP keep-alive is enabled, so the connection is reused between requests.
+
+```cpp
+WiFiSSLClient sslClient;
+HydroServerHTTPClient hsClient(sslClient, "playground.hydroserver.org", 443, PLAYGROUND_API_KEY);
+```
+
+---
+
+### Methods
+
+#### `void setApiKey(const char *apiKey)`
+
+Sets or replaces the API key. Ignored if `nullptr`.
+
+#### `bool publishObservation(const Observation &observation, const char *phenomenonTime)`
+
+POSTs one observation. **Returns** `true` only if the server responds with status `200`. Check `getLastResponseBody()` for the server's reply either way.
+
+#### `void publishAll(Observation **observations, uint8_t size, const char *phenomenonTime)`
+
+POSTs each observation in turn with the same timestamp. One request per observation; failures are not reported.
+
+#### `bool isDatastreamAvailable(const char *datastreamId)`
+
+**Returns** `true` if the datastream exists and is readable with your API key (status `200`). A good startup check to catch a mistyped UUID.
+
+```cpp
+if (!hsClient.isDatastreamAvailable(temperature.datastreamId)) {
+  Serial.println(hsClient.getLastResponseBody());
+}
+```
+
+#### `String getLastResponseBody() const`
+
+The body of the most recent response — usually the error message when a request fails.
+
+---
+
+## Modem wrappers
+
+```cpp
+#include <modems/ExpressifESP32.h>   // or
+#include <modems/DigiXbeeS6B.h>
+```
+
+Helpers for Wi-Fi Bee modules on the EnviroDIY Mayfly, built on [EnviroDIY's TinyGSM fork](https://github.com/EnviroDIY/TinyGSM). Include **only one** modem header per sketch — each one defines the TinyGSM modem type.
+
+### Common interface (`Modem`)
+
+| Method | Description |
+| --- | --- |
+| `void powerUp()` | Drives the power pin `HIGH` to switch on the Bee socket. |
+| `bool connectToInternet(const char *ssid, const char *password, uint32_t maxConnectionTime = 60000)` | Powers up the modem, joins Wi-Fi and waits up to `maxConnectionTime` ms for an IP address. Returns `true` on success. |
+| `bool isInternetAvailable()` | `true` if the modem has a network connection. |
+| `uint32_t getNISTTime()` | Current UTC time as **seconds since 2000-01-01** (the DS3231 RTC's epoch), ready for `rtc.setDateTime()`. Add `946684800` to get Unix time. Returns `0` on failure. |
+| `Client *createClient()` | New plain TCP client for MQTT or HTTP. |
+| `Client *createSecureClient()` | New TLS client for HTTPS, or `nullptr` if the modem can't do TLS. |
+| `void extraSetupForMQTT()` | Modem-specific setup needed before MQTT. Call after `connectToInternet()` and before `connectToBroker()`. |
+
+`createClient()` and `createSecureClient()` allocate with `new`; create the client once (e.g. at global scope) rather than in `loop()`.
+
+### `ExpressifESP32`
+
+For an ESP32 Bee running Espressif AT firmware.
+
+```cpp
+ExpressifESP32(Stream &serial, int8_t powerPin);
+ExpressifESP32(Stream &serial, int8_t powerPin, Stream &debugStream);
+```
+
+| Parameter | Description |
+| --- | --- |
+| `serial` | Serial port wired to the Bee (`Serial1` on the Mayfly). Start it at **57600** baud. |
+| `powerPin` | Bee power pin (`18` on Mayfly 1.x). |
+| `debugStream` | Optional. Echoes all AT traffic to this stream (e.g. `Serial`). |
+
+ESP32-specific behaviour:
+
+- `connectToInternet()` also initialises the modem.
+- `getNISTTime()` syncs from `pool.ntp.org` (waits up to 30 s).
+- `extraSetupForMQTT()` switches the socket to passive receive mode (`AT+CIPRECVMODE=1`).
+- `createSecureClient()` returns a TLS client.
+
+#### `void extraSetupForHTTPS(const char *host, int port)`
+
+Required before HTTPS posts. Sets passive receive mode, sets the TLS Server Name Indication (SNI) to `host` — needed by servers such as the HydroServer playground that host several domains on one IP — and opens the SSL connection.
+
+```cpp
+modem.extraSetupForHTTPS("playground.hydroserver.org", 443);
+```
+
+### `DigiXbeeS6B`
+
+For the Digi XBee S6B Wi-Fi Bee.
+
+```cpp
+DigiXbeeS6B(Stream &serial, int8_t powerPin);
+DigiXbeeS6B(Stream &serial, int8_t powerPin, Stream &debugStream);
+```
+
+Parameters are the same as for `ExpressifESP32`.
+
+XBee-specific behaviour:
+
+- `createSecureClient()` returns `nullptr` — the S6B does not support TLS here, so use plain MQTT or HTTP.
+- `getNISTTime()` uses the RFC 868 time protocol over TCP (port 37) to `time-a-wwv.nist.gov` (132.163.97.1), because the XBee can't hold UDP and TCP sockets open together. Returns `0` if there's no connection.
+- `extraSetupForMQTT()` does nothing (nothing extra is needed), but calling it is harmless.
