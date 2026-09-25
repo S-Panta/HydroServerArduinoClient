@@ -30,8 +30,8 @@ void setup() {
     pinMode(powerPin, OUTPUT);
     digitalWrite(powerPin, HIGH);
 
-    Serial.println("Waiting 30 seconds for sensor...");
-    delay(30000L);
+    Serial.println("Waiting 15 seconds for sensor...");
+    delay(15000L);
   }
 
   Serial.println();

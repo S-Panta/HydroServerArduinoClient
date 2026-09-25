@@ -96,9 +96,8 @@ void loop() {
   uint32_t markedEpochTime = now.getEpoch();
 
   // fires exactly on the clock boundary (e.g. :00 of every interval-th minute)
-  bool onInterval =
-      (markedEpochTime != 0) &&
-      (markedEpochTime % (loggingIntervalMinutes * 60) == 0);
+  bool onInterval = (markedEpochTime != 0) &&
+                    (markedEpochTime % (loggingIntervalMinutes * 60) == 0);
 
   // guard so we only publish once per boundary, not for the whole second
   if (onInterval && markedEpochTime != lastPublishedEpoch) {

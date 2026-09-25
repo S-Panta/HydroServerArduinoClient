@@ -32,7 +32,8 @@
 
 
 // Default aM2!/aD0! response: Mean Turbidity, Variance, Median Turbidity,BES,Min of last 100 readings, Max of last 100 readings,Temperature, Wipe Status
-#define DTS12_NUM_VARIABLES 8
+// #define DTS12_NUM_VARIABLES 8
+#define DTS12_NUM_VARIABLES 4
 #define DTS12_INC_CALC_VARIABLES 0
 
 // When power is first applied to the DTS-12 a wipe cycle will occur which takes about 5 seconds.
@@ -45,61 +46,91 @@
 // Variable name are always from ODM 2 controlled vocabulary. 
 // Because all except wipe status and temperature is turbidity measurement, the variable name will be turbidity.
 // But their, Aggregation Statistic will differ: http://vocabulary.odm2.org/aggregationstatistic/
-#define DTS12_MEAN_VAR_NUM 0
-#define DTS12_MEAN_RESOLUTION 2
-#define DTS12_MEAN_VAR_NAME "turbidity"
-#define DTS12_MEAN_UNIT_NAME "nephelometricTurbidityUnit"
-#define DTS12_MEAN_DEFAULT_CODE "DTS12Mean"
+// #define DTS12_MEAN_VAR_NUM 0
+// #define DTS12_MEAN_RESOLUTION 2
+// #define DTS12_MEAN_VAR_NAME "turbidity"
+// #define DTS12_MEAN_UNIT_NAME "nephelometricTurbidityUnit"
+// #define DTS12_MEAN_DEFAULT_CODE "DTS12Mean"
 
-#define DTS12_VARIANCE_VAR_NUM 1
-#define DTS12_VARIANCE_RESOLUTION 2
-#define DTS12_VARIANCE_VAR_NAME "turbidity"
-#define DTS12_VARIANCE_UNIT_NAME "nephelometricTurbidityUnitSquared"
-#define DTS12_VARIANCE_DEFAULT_CODE "DTS12Variance"
+// #define DTS12_VARIANCE_VAR_NUM 1
+// #define DTS12_VARIANCE_RESOLUTION 2
+// #define DTS12_VARIANCE_VAR_NAME "turbidity"
+// #define DTS12_VARIANCE_UNIT_NAME "nephelometricTurbidityUnitSquared"
+// #define DTS12_VARIANCE_DEFAULT_CODE "DTS12Variance"
 
 
-// 2 - Median
-#define DTS12_TURB_VAR_NUM 2
-#define DTS12_TURB_RESOLUTION 2
-#define DTS12_TURB_VAR_NAME "turbidity"
-#define DTS12_TURB_UNIT_NAME "nephelometricTurbidityUnit"
-#define DTS12_TURB_DEFAULT_CODE "DTS12Median"
+// // 2 - Median
+// #define DTS12_TURB_VAR_NUM 2
+// #define DTS12_TURB_RESOLUTION 2
+// #define DTS12_TURB_VAR_NAME "turbidity"
+// #define DTS12_TURB_UNIT_NAME "nephelometricTurbidityUnit"
+// #define DTS12_TURB_DEFAULT_CODE "DTS12Median"
 
-// BES stands for Best Easy Systematic estimator.
-// See Section 1.7.2 DTS-12 Calculations to understand how BES is computed.
-// See: https://www.statisticshowto.com/trimean/
-#define DTS12_BES_VAR_NUM 3
-#define DTS12_BES_RESOLUTION 2
-#define DTS12_BES_VAR_NAME "turbidity"
-#define DTS12_BES_UNIT_NAME "nephelometricTurbidityUnit"
-#define DTS12_BES_DEFAULT_CODE "DTS12BES"
+// // BES stands for Best Easy Systematic estimator.
+// // See Section 1.7.2 DTS-12 Calculations to understand how BES is computed.
+// // See: https://www.statisticshowto.com/trimean/
+// #define DTS12_BES_VAR_NUM 3
+// #define DTS12_BES_RESOLUTION 2
+// #define DTS12_BES_VAR_NAME "turbidity"
+// #define DTS12_BES_UNIT_NAME "nephelometricTurbidityUnit"
+// #define DTS12_BES_DEFAULT_CODE "DTS12BES"
 
-// 4 - Min of last 100 readings
-#define DTS12_MIN_VAR_NUM 4
-#define DTS12_MIN_RESOLUTION 2
-#define DTS12_MIN_VAR_NAME "turbidity"
-#define DTS12_MIN_UNIT_NAME "nephelometricTurbidityUnit"
-#define DTS12_MIN_DEFAULT_CODE "DTS12Min"
+// // 4 - Min of last 100 readings
+// #define DTS12_MIN_VAR_NUM 4
+// #define DTS12_MIN_RESOLUTION 2
+// #define DTS12_MIN_VAR_NAME "turbidity"
+// #define DTS12_MIN_UNIT_NAME "nephelometricTurbidityUnit"
+// #define DTS12_MIN_DEFAULT_CODE "DTS12Min"
 
-// 5 - Max of last 100 readings
-#define DTS12_MAX_VAR_NUM 5
-#define DTS12_MAX_RESOLUTION 2
-#define DTS12_MAX_VAR_NAME "turbidity"
-#define DTS12_MAX_UNIT_NAME "nephelometricTurbidityUnit"
-#define DTS12_MAX_DEFAULT_CODE "DTS12Max"
+// // 5 - Max of last 100 readings
+// #define DTS12_MAX_VAR_NUM 5
+// #define DTS12_MAX_RESOLUTION 2
+// #define DTS12_MAX_VAR_NAME "turbidity"
+// #define DTS12_MAX_UNIT_NAME "nephelometricTurbidityUnit"
+// #define DTS12_MAX_DEFAULT_CODE "DTS12Max"
 
+// // Water temperature: // operating range 0C to +40C (non-freezing), accuracy +/-0.2C
+// #define DTS12_TEMP_VAR_NUM 6
+// #define DTS12_TEMP_RESOLUTION 2
+// #define DTS12_TEMP_VAR_NAME "temperature"
+// #define DTS12_TEMP_UNIT_NAME "degreeCelsius"
+// #define DTS12_TEMP_DEFAULT_CODE "DTS12Temp"
+
+// // Wipe Status
+// // "Wipe Status Codes: 0 = Wiped, 1 = Too cold (below
+// // set temperature value so wipe suppressed), 2 = No wipe for any other
+// // reason other than temperature suppressed, 3 = Attempted wipe"
+// #define DTS12_WIPE_VAR_NUM 7
+// #define DTS12_WIPE_RESOLUTION 0
+// #define DTS12_WIPE_VAR_NAME "counter"
+// #define DTS12_WIPE_UNIT_NAME "dimensionless"
+// #define DTS12_WIPE_DEFAULT_CODE "DTS12Wipe"
+
+
+
+// For testing 
 // Water temperature: // operating range 0C to +40C (non-freezing), accuracy +/-0.2C
-#define DTS12_TEMP_VAR_NUM 6
+#define DTS12_TEMP_VAR_NUM 0
 #define DTS12_TEMP_RESOLUTION 2
 #define DTS12_TEMP_VAR_NAME "temperature"
 #define DTS12_TEMP_UNIT_NAME "degreeCelsius"
 #define DTS12_TEMP_DEFAULT_CODE "DTS12Temp"
 
-// Wipe Status
-// "Wipe Status Codes: 0 = Wiped, 1 = Too cold (below
-// set temperature value so wipe suppressed), 2 = No wipe for any other
-// reason other than temperature suppressed, 3 = Attempted wipe"
-#define DTS12_WIPE_VAR_NUM 7
+
+#define DTS12_TURB_VAR_NUM 1
+#define DTS12_TURB_RESOLUTION 2
+#define DTS12_TURB_VAR_NAME "turbidity"
+#define DTS12_TURB_UNIT_NAME "nephelometricTurbidityUnit"
+#define DTS12_TURB_DEFAULT_CODE "DTS12Median"
+
+
+#define DTS12_VARIANCE_VAR_NUM 2
+#define DTS12_VARIANCE_RESOLUTION 2
+#define DTS12_VARIANCE_VAR_NAME "turbidity"
+#define DTS12_VARIANCE_UNIT_NAME "nephelometricTurbidityUnitSquared"
+#define DTS12_VARIANCE_DEFAULT_CODE "DTS12Variance"
+
+#define DTS12_WIPE_VAR_NUM 3
 #define DTS12_WIPE_RESOLUTION 0
 #define DTS12_WIPE_VAR_NAME "counter"
 #define DTS12_WIPE_UNIT_NAME "dimensionless"
@@ -153,14 +184,14 @@ class DTS12 : public SDI12Sensors {
 };
 
 
-class DTS12_Mean_Turbidity : public Variable {
- public:
-    explicit DTS12_Mean_Turbidity(DTS12* parentSense, const char* uuid = "",
-                                  const char* varCode = DTS12_MEAN_DEFAULT_CODE)
-        : Variable(parentSense, DTS12_MEAN_VAR_NUM, DTS12_MEAN_RESOLUTION,
-                   DTS12_MEAN_VAR_NAME, DTS12_MEAN_UNIT_NAME, varCode, uuid) {}
-    ~DTS12_Mean_Turbidity() override = default;
-};
+// class DTS12_Mean_Turbidity : public Variable {
+//  public:
+//     explicit DTS12_Mean_Turbidity(DTS12* parentSense, const char* uuid = "",
+//                                   const char* varCode = DTS12_MEAN_DEFAULT_CODE)
+//         : Variable(parentSense, DTS12_MEAN_VAR_NUM, DTS12_MEAN_RESOLUTION,
+//                    DTS12_MEAN_VAR_NAME, DTS12_MEAN_UNIT_NAME, varCode, uuid) {}
+//     ~DTS12_Mean_Turbidity() override = default;
+// };
 
 class DTS12_Variance : public Variable {
  public:
@@ -180,32 +211,32 @@ class DTS12_Median_Turbidity : public Variable {
     ~DTS12_Median_Turbidity() override = default;
 };
 
-class DTS12_BES_Turbidity : public Variable {
- public:
-    explicit DTS12_BES_Turbidity(DTS12* parentSense, const char* uuid = "",
-                                 const char* varCode = DTS12_BES_DEFAULT_CODE)
-        : Variable(parentSense, DTS12_BES_VAR_NUM, DTS12_BES_RESOLUTION,
-                   DTS12_BES_VAR_NAME, DTS12_BES_UNIT_NAME, varCode, uuid) {}
-    ~DTS12_BES_Turbidity() override = default;
-};
+// class DTS12_BES_Turbidity : public Variable {
+//  public:
+//     explicit DTS12_BES_Turbidity(DTS12* parentSense, const char* uuid = "",
+//                                  const char* varCode = DTS12_BES_DEFAULT_CODE)
+//         : Variable(parentSense, DTS12_BES_VAR_NUM, DTS12_BES_RESOLUTION,
+//                    DTS12_BES_VAR_NAME, DTS12_BES_UNIT_NAME, varCode, uuid) {}
+//     ~DTS12_BES_Turbidity() override = default;
+// };
 
-class DTS12_Min_Turbidity : public Variable {
- public:
-    explicit DTS12_Min_Turbidity(DTS12* parentSense, const char* uuid = "",
-                                 const char* varCode = DTS12_MIN_DEFAULT_CODE)
-        : Variable(parentSense, DTS12_MIN_VAR_NUM, DTS12_MIN_RESOLUTION,
-                   DTS12_MIN_VAR_NAME, DTS12_MIN_UNIT_NAME, varCode, uuid) {}
-    ~DTS12_Min_Turbidity() override = default;
-};
+// class DTS12_Min_Turbidity : public Variable {
+//  public:
+//     explicit DTS12_Min_Turbidity(DTS12* parentSense, const char* uuid = "",
+//                                  const char* varCode = DTS12_MIN_DEFAULT_CODE)
+//         : Variable(parentSense, DTS12_MIN_VAR_NUM, DTS12_MIN_RESOLUTION,
+//                    DTS12_MIN_VAR_NAME, DTS12_MIN_UNIT_NAME, varCode, uuid) {}
+//     ~DTS12_Min_Turbidity() override = default;
+// };
 
-class DTS12_Max_Turbidity : public Variable {
- public:
-    explicit DTS12_Max_Turbidity(DTS12* parentSense, const char* uuid = "",
-                                 const char* varCode = DTS12_MAX_DEFAULT_CODE)
-        : Variable(parentSense, DTS12_MAX_VAR_NUM, DTS12_MAX_RESOLUTION,
-                   DTS12_MAX_VAR_NAME, DTS12_MAX_UNIT_NAME, varCode, uuid) {}
-    ~DTS12_Max_Turbidity() override = default;
-};
+// class DTS12_Max_Turbidity : public Variable {
+//  public:
+//     explicit DTS12_Max_Turbidity(DTS12* parentSense, const char* uuid = "",
+//                                  const char* varCode = DTS12_MAX_DEFAULT_CODE)
+//         : Variable(parentSense, DTS12_MAX_VAR_NUM, DTS12_MAX_RESOLUTION,
+//                    DTS12_MAX_VAR_NAME, DTS12_MAX_UNIT_NAME, varCode, uuid) {}
+//     ~DTS12_Max_Turbidity() override = default;
+// };
 
 class DTS12_Temp : public Variable {
  public:

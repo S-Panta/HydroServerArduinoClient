@@ -24,7 +24,6 @@ ProcessorStats mcuBoard(mcuBoardVersion);
 #include <sensors/MaximDS3231.h>
 MaximDS3231 ds3231(1);
 
-#define MS_SDI12SENSORS_DEBUG_DEEP
 #include <sensors/DTS12.h> 
 
 const char    DTS12SDI12address   = '1';  
@@ -87,18 +86,15 @@ void setup() {
 void loop() {
     // Only measure when the RTC hits a logging interval
     if (dataLogger.checkInterval()) {
-        dataLogger.alertOn();                 // green LED on while measuring
+        dataLogger.alertOn();                 
 
-        varArray.completeUpdate();            // power up, wake, measure, power down
+        varArray.completeUpdate();            
 
-        // Show the values on the Serial Monitor
         Serial.println(F("------ New reading ------"));
         varArray.printSensorData(&Serial);
-        Serial.flush();                       // let it finish printing before sleep
-
-        dataLogger.logToSD();                 // append the row to the CSV
+        Serial.flush();                       
         dataLogger.alertOff();
     }
 
-    dataLogger.systemSleep();                 // sleep until the next RTC alarm
+    dataLogger.systemSleep();                
 }
