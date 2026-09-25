@@ -29,7 +29,7 @@ public:
 
   bool isInternetAvailable() override;
 
-  String getLocalIP() { return _modem.localIP().toString(); }
+  // String getLocalIP() { return _modem.localIP().toString(); }
 
   uint32_t getNISTTime() override;
 

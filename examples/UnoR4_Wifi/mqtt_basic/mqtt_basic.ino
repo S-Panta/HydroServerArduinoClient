@@ -34,7 +34,7 @@ unsigned long previousMillis = 0;
 #include <HydroServerMQTTClient.h>
 WiFiClient wifiClient;
 
-// Create the HydroServer MQTT client.
+// Create the HydroServer MQTT client. 
 // wificlient and broker address are necessary while other are optional
 // By default, the broker port is 1883.
 HydroServerMQTTClient mqttClient(wifiClient, MQTT_BROKER);
