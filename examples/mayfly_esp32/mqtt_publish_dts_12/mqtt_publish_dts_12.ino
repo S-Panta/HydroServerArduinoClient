@@ -9,8 +9,8 @@
 #include <modems/ExpressifESP32.h>
 
 const char *sketchName = "mqtt_publish_dts_12.ino";
-const char *LoggerID = "mayflylogger";
-const int8_t loggingInterval = 1;
+const char *LoggerID = "mayflylogger1";
+const int8_t loggingInterval = 10;
 const int8_t timeZone = 0;
 
 const int32_t serialBaud = 115200;
@@ -24,7 +24,7 @@ const int8_t sensorPowerPin = 22;
 
 const char *wifiId = "USU-guest";
 const char *wifiPwd = 0;
-const char *MQTT_BROKER = "144.39.51.28";
+const char *MQTT_BROKER = "144.39.174.90";
 const int32_t modemBaud = 57600; // ESP32 requires 57600
 
 ExpressifESP32 esp32(XbeeSerial, XBEE_PWR);
@@ -82,11 +82,10 @@ void setup() {
   delay(1000);
 
   Serial.print(F("Now running "));
-  Serial.print(sketchName);
+  // __FILE__ prints full path so need to extract filename from that path
+  Serial.println(__builtin_strrchr(__FILE__, '/') + 1);
   Serial.print(F(" on Logger "));
-  Serial.println(LoggerID);
-  Serial.print(F("Using ModularSensors Library version "));
-  Serial.println(MODULAR_SENSORS_VERSION);
+  Serial.println(loggerID);
 
   pinMode(greenLED, OUTPUT);
   digitalWrite(greenLED, LOW);
@@ -96,7 +95,7 @@ void setup() {
   XbeeSerial.begin(modemBaud);
   modem.powerUp();
   delay(1000);
-  Serial.println(F("Powered up modem"));
+  Serial.println(F("Powered up Xbee Wifi modem"));
 
   if (!modem.connectToInternet(wifiId, wifiPwd)) {
     Serial.println(F("WiFi is not connected"));
@@ -111,30 +110,29 @@ void setup() {
 
   modem.extraSetupForMQTT();
   mqttClient.setSiteCode("uwrl");
-  mqttClient.setClientID("MayFlyLogger");
+  mqttClient.setClientID(loggerID);
   mqttClient.setLastWill("Mayfly Logger shutting down");
-  mqttClient.setKeepAliveInterval(120);
+  mqttClient.setKeepAliveInterval(660);
 
   if (!mqttClient.connectToBroker()) {
     Serial.println("Cannot connect to Broker. Connection Error is ");
     Serial.println(mqttClient.getConnectionError());
-    // it make no sense to work further when connection to broker is not
-    // successful
-    while (1)
-      ;
+  } else {
+    Serial.println("Connected to MQTT broker");
   };
 
-  medianTurbidity.datastreamId = "median-turbidity";
-  waterTemperature.datastreamId = "water-temperature";
-  varianceTurbidity.datastreamId = "variance-water";
+  // from hydroserver
+  medianTurbidity.datastreamId = "01a0f8c1-035d-7eb6-8125-35db98effc88";
+  waterTemperature.datastreamId = "01a0f8c3-a327-7f68-8143-b19ba3e327fd";
+  varianceTurbidity.datastreamId = "01a0f8c2-137a-7d61-86e1-fa278bda2be7";
 
   medianTurbidity.sensorId = "DTS-12";
   waterTemperature.sensorId = "DTS-12";
   varianceTurbidity.sensorId = "DTS-12";
 
   medianTurbidity.observedProperty = "medianturbidity";
-  waterTemperature.sensorId = "water_temp";
-  varianceTurbidity.sensorId = "variance_in_turbidity";
+  waterTemperature.observedProperty = "watertemp";
+  varianceTurbidity.observedProperty = "turbidityvariance";
 
   Logger::setLoggerTimeZone(timeZone);
   loggerClock::setRTCOffset(0);
@@ -143,19 +141,33 @@ void setup() {
                            greenLED);
 
   varArray.begin(variableCount, variableList);
-  dataLogger.begin(LoggerID, loggingInterval, &varArray);
+  dataLogger.setStartupMeasurements(0);
+  dataLogger.begin(loggerID, loggingInterval, &varArray);
 
   Serial.println(F("Setting up sensors..."));
   varArray.setupSensors();
-  dataLogger.setFileName("testdata.csv");
-  dataLogger.createLogFile(true);
+  // dataLogger.setFileName("testdata.csv");
+  // dataLogger.createLogFile(true);
 
   dataLogger.systemSleep();
 }
 
 void loop() {
-  dataLogger.logData(false);
-  publishCycle();
+  if (dataLogger.checkInterval()) {
+    Serial.println(Logger::formatDateTime_ISO8601(rtc.now().getEpoch()));
+    Serial.println("Taking measurement and sending to broker");
+    varArray.completeUpdate();
+    // dataLogger.logToSD();
+
+    if (!mqttClient.isConnected()) {
+      if (!modem.isInternetAvailable()) {
+        modem.connectToInternet(wifiId, wifiPwd);
+      }
+      mqttClient.connectToBroker();
+    }
+
+    publishCycle();
+  }
   mqttClient.poll();
   dataLogger.systemSleep();
 }
