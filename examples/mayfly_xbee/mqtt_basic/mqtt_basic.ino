@@ -1,10 +1,10 @@
 #define XbeeSerial Serial1
 #define XbeePower 18
 #define TINY_GSM_MODEM_XBEE
+#define TINY_GSM_USE_WIFI true
 
 #include <HydroServerMQTTClient.h>
 #include <TinyGsmClient.h>
-#define TINY_GSM_USE_WIFI true
 
 // for internal sensor in mayfly
 #include "Adafruit_SHT4x.h"
@@ -16,7 +16,8 @@
 // if ip is used, the ip should be updated in DL using xctu
 // const char* MQTT_BROKER   = "54.36.178.49";
 // const char* MQTT_BROKER   = "broker.hivemq.com";
-const char *MQTT_BROKER = "raspberrypi1.mypc.usu.edu";
+
+const char *MQTT_BROKER = "144.39.174.90";
 
 // uncomment this to see debug from TinyGSM client
 // #include <StreamDebugger.h>
@@ -50,13 +51,7 @@ void connectToWifi() {
   }
 
   Serial.println("Wifi is connected");
-
-  if (modem.isNetworkConnected()) {
-    Serial.println("Network connected");
-  }
-
-  Serial.print("Local IP: ");
-  Serial.println(modem.localIP());
+  delay(3000);
 }
 
 String getISO8601Timestamp() {
