@@ -55,9 +55,11 @@ Open `ModularSensors/src/ModSensorConfig.h` and add these lines **inside the hea
 
 ModularSensors has built-in debug printing that goes to the Serial Monitor. All of the DTS-12's SDI-12 communication is handled by the parent class `SDI12Sensors`, so its debug output shows everything the DTS-12 is doing
 
-Open `ModularSensors/src/ModSensorDebugConfig.h`. It already contains the debug options, commented out. Uncomment these two lines.
+Open `ModularSensors/src/ModSensorDebugConfig.h`. It already contains the debug options, commented out. Uncomment these two lines and add extra two lines.
 
 ```cpp
 #define MS_SDI12SENSORS_DEBUG       
 #define MS_SDI12SENSORS_DEBUG_DEEP 
+#define MS_DTS12_DEBUG
+#define MS_SDI12SENSORS_DEBUG_DEEP
 ```
