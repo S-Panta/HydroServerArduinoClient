@@ -1,4 +1,4 @@
-#DTS - 12 and CS451 Support for ModularSensors
+# DTS - 12 and CS451 Support for ModularSensors
 ModularSensors does not include drivers for the FTS DTS-12 turbidity sensor or the Campbell Scientific CS451 pressure transducer. This folder provides them. Both sensors communicate over SDI-12 and were tested on an EnviroDIY Mayfly using the Arduino IDE.
 | Sensor | Files | Measures |
 |---|---|---|
@@ -69,6 +69,7 @@ new DTS12_Temp(&dts12, "UUID");
 ---
 
 ## 4. CS451 Pressure Transducer
+Official manual: https://s.campbellsci.com/documents/us/manuals/cs451-cs456.pdf
 
 | # | Variable class      | Value                     | Unit | Default code      |
 |---|---------------------|---------------------------|------|-------------------|
