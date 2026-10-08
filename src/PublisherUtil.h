@@ -13,7 +13,7 @@ struct Observation {
   const char *observedProperty;
   const char *datastreamId;
   const char *sensorId;
-  double value = 0.0;
+  double value;
 };
 
 namespace ObservationPayload {
