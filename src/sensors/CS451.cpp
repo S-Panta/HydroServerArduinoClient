@@ -1,7 +1,7 @@
 #define LIBCALL_ENABLEINTERRUPT
 #include "ModSensorInterrupts.h"
 
-#include "DTS12.h"
+#include "CS451.h"
 
 #ifdef MS_SDI12_NO_CRC_CHECK
 #define MS_SDI12_USE_CRC false
@@ -10,10 +10,10 @@
 #endif
 
 // This overrides the method in SDI12Sensor class
-// We need to send aM1! command to get all seven variable value measured by
-// DTS-12 All the measurement logic are from modularsensor
+// We need to send aM8! command to get all average of 50 measurement of
+// pressure/level All the measurement logic are from modularsensor
 // SDI12Sensors::startSDI12Measurement()
-int8_t DTS12::startSDI12Measurement(bool isConcurrent) {
+int8_t CS451::startSDI12Measurement(bool isConcurrent) {
   String startCommand;
   String sdiResponse;
   String returnedAddress;
@@ -41,7 +41,7 @@ int8_t DTS12::startSDI12Measurement(bool isConcurrent) {
     if (MS_SDI12_USE_CRC) {
       startCommand += "C"; // Add C to request a CRC
     }
-    startCommand += "1"; // Adding 1 after M gives 7 variable
+    startCommand += "8"; // Adding 1 after M gives 7 variable
     startCommand += "!"; // All commands end with '!'
     _SDI12Internal.clearBuffer();
     _SDI12Internal.sendCommand(startCommand, _extraWakeTime);
@@ -97,7 +97,7 @@ int8_t DTS12::startSDI12Measurement(bool isConcurrent) {
 }
 
 // The function the logger calls to collect the result.
-bool DTS12::addSingleMeasurementResult() {
+bool CS451::addSingleMeasurementResult() {
   // Perform common initialization checks
   if (!initializeMeasurementResult()) {
     return false;
