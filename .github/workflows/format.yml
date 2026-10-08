@@ -1,4 +1,4 @@
-name: Clang Format Checker
+name: Clang Formatter
 on: 
   push:
     branches: &branches
@@ -12,11 +12,11 @@ on:
     paths: *paths
   
 jobs:
-  clang-format-checking:
+  clang-formatter:
     runs-on: ubuntu-latest
     timeout-minutes: 1
     steps:
       - uses: actions/checkout@v5
       - uses: RafikFarhad/clang-format-github-action@v6
         with:
-          sources: "src/*.h,src/*.cpp,examples/**/**/*.ino"
+          sources: "src/*.h,src/*.cpp,examples/**/**/*.ino,src/sensors/*.*,src/modems/*.*"

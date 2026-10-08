@@ -1,4 +1,4 @@
-# DTS-12 and CS451 Support for ModularSensors
+#DTS - 12 and CS451 Support for ModularSensors
 ModularSensors does not include drivers for the FTS DTS-12 turbidity sensor or the Campbell Scientific CS451 pressure transducer. This folder provides them. Both sensors communicate over SDI-12 and were tested on an EnviroDIY Mayfly using the Arduino IDE.
 | Sensor | Files | Measures |
 |---|---|---|
@@ -19,8 +19,8 @@ Both classes inherit from `SDI12Sensors`, so all SDI-12 communication (acknowled
 4. Copy `DTS12.h`, `DTS12.cpp`, `CS451.h` and `CS451.cpp` into `ModularSensors/src/sensors/`. The Arduino IDE compiles every `.cpp` under a library's `src/` folder automatically.
 5. Include them in your sketch:
    ```cpp
-   #include <sensors/DTS12.h>
-   #include <sensors/CS451.h>
+#include <sensors/CS451.h>
+#include <sensors/DTS12.h>
    ```
 
 ---
@@ -33,8 +33,8 @@ Open `ModularSensors/src/ModSensorConfig.h` and add these lines **inside the hea
 
 ```cpp
 // ---- Required for FTS DTS-12 (also used by the CS451 driver) ----
-#define MS_SDI12_NON_CONCURRENT   // send aM! instead of aC!
-#define MS_SDI12_NO_CRC_CHECK     // send aM! instead of aMC!
+#define MS_SDI12_NON_CONCURRENT // send aM! instead of aC!
+#define MS_SDI12_NO_CRC_CHECK   // send aM! instead of aMC!
 ```
 
 ---
