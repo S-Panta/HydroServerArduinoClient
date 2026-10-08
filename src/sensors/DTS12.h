@@ -29,7 +29,6 @@
 
 // Default aM2!/aD0! response: Mean Turbidity, Variance, Median Turbidity,BES,Min of last 100 readings, Max of last 100 readings,Temperature, Wipe Status
 #define DTS12_NUM_VARIABLES 7
-// #define DTS12_NUM_VARIABLES 4
 #define DTS12_INC_CALC_VARIABLES 0
 
 // When power is first applied to the DTS-12 a wipe cycle will occur which takes about 5 seconds.
@@ -39,9 +38,9 @@
 #define DTS12_MEASUREMENT_TIME_MS 40000  
 #define DTS12_EXTRA_WAKE_TIME_MS 0 
 
-// Variable name are always from ODM 2 controlled vocabulary. 
-// Because all except wipe status and temperature is turbidity measurement, the variable name will be turbidity.
-// But their, Aggregation Statistic will differ: http://vocabulary.odm2.org/aggregationstatistic/
+// Variable name are always from ODM2 controlled vocabulary. 
+// Because all except temperature is turbidity measurement, the variable name will be turbidity.
+// But their aggregation statistic will differ: http://vocabulary.odm2.org/aggregationstatistic/
 #define DTS12_MEAN_VAR_NUM 0
 #define DTS12_MEAN_RESOLUTION 2
 #define DTS12_MEAN_VAR_NAME "turbidity"
@@ -98,8 +97,8 @@ class DTS12 : public SDI12Sensors {
     // "The DTS-12 is shipped with default address 0 (unless
     // shipped as part of an integrated FTS system)." Must be changed to a
     // unique address before use with mayfly logger.
-        /**
-     * @brief Construct a new SDI12 Sensor object.
+    /**
+     * @brief Construct a new DTS12 object.
      *
      * The SDI-12 address of the sensor, the Arduino pin controlling power
      * on/off, and the Arduino pin sending and receiving data are required for
@@ -108,13 +107,14 @@ class DTS12 : public SDI12Sensors {
      * interrupts.
      *
      * @param SDI12address The SDI-12 address of the DTS12; can be a char,
-     * char*, or int. The SDI-12 address **must** be changed from the factory
-     * programmed value of "0" before the ECH2O can be used with
-     * ModularSensors!
-     * @param powerPin The pin on the mcu controlling power to the DTS12
+     * char*, or int. The DTS-12 ships with address "0" (unless part of an
+     * integrated FTS system); change it to a unique address before using it
+     * with ModularSensors.
+     * @param powerPin The pin on the mcu controlling power to the DTS12.
      * Use -1 if it is continuously powered.
-     * - The DTS12 requires a 3.5-12V power supply, which can be turned off
-     * between measurements
+     * - The DTS12 requires a ~12V supply (check the FTS manual for the exact
+     * range), which can be turned off between measurements. Note that a wipe
+     * cycle runs each time power is applied.
      * @param dataPin The pin on the mcu connected to the data line of the
      * SDI-12 circuit.
      * @param measurementsToAverage The number of measurements to take and
