@@ -108,11 +108,15 @@ public:
 
   const char *getObservationTopic(const Observation &observation);
 
-  void publishAll(Observation **observations, uint8_t size,
-                  const char *phenomenonTime) {
+  uint8_t publishAll(Observation **observations, uint8_t size,
+                     const char *phenomenonTime) {
+    uint8_t published = 0;
     for (uint8_t i = 0; i < size; i++) {
-      publishObservation(*observations[i], phenomenonTime);
+      if (publishObservation(*observations[i], phenomenonTime)) {
+        published++;
+      }
     }
+    return published;
   }
 
 private:
