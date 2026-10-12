@@ -20,4 +20,4 @@ jobs:
       - uses: RafikFarhad/clang-format-github-action@v6
         with:
           sources: "src/*.h,src/*.cpp,examples/**/**/*.ino,src/*/*.*"
-          exclude: "*.md"
+          exclude: "./src/sensors/README.md"
