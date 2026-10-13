@@ -27,7 +27,7 @@ ExpressifESP32 &modem = esp32;
 
 HydroServerMQTTClient mqttClient(*modem.createClient(), MQTT_BROKER);
 
-Observation temperature;
+Observation temperature = {"temperature_celsius", "data-streamid", "sensorid"};
 
 const uint32_t loggingIntervalMinutes = 1;
 uint32_t lastPublishedEpoch = 0;
@@ -84,9 +84,6 @@ void setup() {
   };
 
   Serial.println("connection successful");
-  temperature.datastreamId = "data-streamid";
-  temperature.sensorId = "sensorid";
-  temperature.observedProperty = "temperature_celsius";
 }
 
 void loop() {

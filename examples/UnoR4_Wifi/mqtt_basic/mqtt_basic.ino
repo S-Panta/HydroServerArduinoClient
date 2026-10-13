@@ -21,8 +21,7 @@ const char *password = 0;
 // You can use either url or ip address of mqtt broker.
 // const char* MQTT_BROKER = "144.39.67.171";
 // const char *MQTT_BROKER = "test.mosquitto.org";
-// const char *MQTT_BROKER = "raspberrypi1.mypc.usu.edu";
-const char *MQTT_BROKER = "144.39.51.28";
+const char *MQTT_BROKER = "raspberrypi1.mypc.usu.edu";
 
 // data publish interval
 const long interval = 30000;

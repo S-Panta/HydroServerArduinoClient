@@ -124,13 +124,15 @@ private:
   // Private class variable are assigned value later
   const char *_broker;
   uint16_t _port;
-  const char *_clientId;
+  // However, it's recommended to have a unique class id to allow for persistent
+  // session in broker
+  const char *_clientId = "logger-1";
   const char *_username;
   const char *_password;
   unsigned long _keepAliveSeconds = 60;
   unsigned long _connectionTimeout = 20;
   bool _cleanSession = false;
-  const char *_sitecode;
+  const char *_sitecode = "site1";
   float _latestValue;
   char _observationTopic[256];
   char _lastWillTopic[128];

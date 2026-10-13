@@ -30,11 +30,11 @@ WiFiClient wifiClient;
 WiFiSSLClient sslClient;
 HydroServerHTTPClient hsClient(sslClient, serverAddress, serverPort);
 
-Observation temperature = {"Temperature", datastreamId};
+Observation temperature = {"Temperature", datastreamId, "sensorid"};
 // const char *streamTempDataStreamId = "019fa988-631d-7dc1-886f-b80431339ff7";
 // Observation streamTemperature = {"StreamTemperature",
-// streamTempDataStreamId}; Observation *observations[] = {&temperature,
-// &streamTemperature};
+// streamTempDataStreamId, "sensorid"}; Observation *observations[] =
+// {&temperature, &streamTemperature};
 
 // This is for realtime clock
 #include "RTC.h"

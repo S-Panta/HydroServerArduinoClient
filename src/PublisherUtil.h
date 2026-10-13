@@ -14,6 +14,11 @@ struct Observation {
   const char *datastreamId;
   const char *sensorId;
   double value;
+
+  Observation(const char *observedProperty, const char *datastreamId,
+              const char *sensorId, double value = NAN)
+      : observedProperty(observedProperty), datastreamId(datastreamId),
+        sensorId(sensorId), value(value) {}
 };
 
 namespace ObservationPayload {

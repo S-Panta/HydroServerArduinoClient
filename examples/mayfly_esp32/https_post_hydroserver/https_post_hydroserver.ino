@@ -21,7 +21,7 @@ ExpressifESP32 &modem = esp32;
 
 HydroServerHTTPClient hsClient(*modem.createSecureClient(), serverAddress,
                                serverPort);
-Observation temperature;
+Observation temperature = {"Temperature", datastreamId, "sensorid"};
 
 void setupDateTimeFromServer(uint32_t unix_time) {
   rtc.begin();
@@ -66,10 +66,6 @@ void setup() {
   Serial.println("extra setup for https completed");
 
   hsClient.setApiKey(apiKey);
-
-  temperature.datastreamId = datastreamId;
-  temperature.sensorId = "sensorid";
-  temperature.observedProperty = "Temperature";
 }
 
 void loop() {

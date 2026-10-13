@@ -19,5 +19,5 @@ jobs:
       - uses: actions/checkout@v5
       - uses: RafikFarhad/clang-format-github-action@v6
         with:
-          sources: "src/*.h,src/*.cpp,examples/**/**/*.ino,src/*/*.*"
-          excludes: "src/sensors/README.md"
+          sources: "src/*.h,src/*.cpp,examples/**/**/*.ino,src/modem/*.*,extra/sensors/*.*"
+          excludes: "extra/sensors/README.md"

@@ -122,6 +122,8 @@ classDiagram
 | `src/modems/modem.h` | Abstract `Modem` interface. |
 | `src/modems/ExpressifESP32.h/.cpp` | ESP32 AT-firmware Bee. |
 | `src/modems/DigiXbeeS6B.h/.cpp` | Digi XBee S6B Wi-Fi Bee. |
+| `extra/sensors/DTS12.h/.cpp` | ModularSensors driver for the FTS DTS-12 turbidity sensor. Not compiled with the library. |
+| `extra/sensors/CS451.h/.cpp` | ModularSensors driver for the Campbell Scientific CS451 pressure transducer. Not compiled with the library. |
 
 ## Dependencies
 
@@ -132,3 +134,4 @@ classDiagram
 | ArduinoHttpClient | `HydroServerHTTPClient` |
 | EnviroDIY TinyGSM fork | Modem wrappers |
 | StreamDebugger | Modem wrappers (debug output) |
+| EnviroDIY ModularSensors | `extra/sensors` drivers and the ModularSensors examples only; not needed by the core library |

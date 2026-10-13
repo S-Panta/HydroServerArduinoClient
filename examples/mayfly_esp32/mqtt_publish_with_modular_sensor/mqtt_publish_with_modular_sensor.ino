@@ -50,11 +50,12 @@ int variableCount = sizeof(variableList) / sizeof(variableList[0]);
 VariableArray varArray;
 Logger dataLogger;
 
-Observation boardTempObs;
-Observation batteryObs;
 const char *batteryObsDataStreamid = "01a0025b-8101-7b64-92f4-ccf26c3c3cdc";
 // From hydroserver instance; check in hydroserver
 const char *tempDataStreamId = "019eae3f-3450-70db-b5d2-a55879b4d681";
+
+Observation boardTempObs = {"board_temp", tempDataStreamId, "mayfly"};
+Observation batteryObs = {"battery_voltage", batteryObsDataStreamid, "mayfly"};
 
 void publishCycle() {
   String ts = Logger::formatDateTime_ISO8601(Logger::markedLocalUnixTime);
@@ -113,15 +114,6 @@ void setup() {
   } else {
     Serial.println("Connected to MQTT broker");
   };
-
-  batteryObs.datastreamId = batteryObsDataStreamid;
-  boardTempObs.datastreamId = tempDataStreamId;
-
-  batteryObs.sensorId = "mayfly";
-  boardTempObs.sensorId = "mayfly";
-
-  batteryObs.observedProperty = "battery_voltage";
-  boardTempObs.observedProperty = "board_temp";
 
   Logger::setLoggerTimeZone(timeZone);
   loggerClock::setRTCOffset(0);

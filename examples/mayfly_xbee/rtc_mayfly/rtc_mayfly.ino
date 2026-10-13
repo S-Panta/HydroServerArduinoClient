@@ -11,7 +11,8 @@ const char *wifiPwd = WIFI_PASS;
 #include <TinyGsmClient.h>
 TinyGsm modem(XbeeSerial);
 TinyGsmClient client(modem);
-Observation streamTemperature;
+Observation streamTemperature = {"Temperature", "uuid-temperature",
+                                 "temp-sensor"};
 
 const char *MQTT_BROKER = "raspberrypi1.mypc.usu.edu";
 HydroServerMQTTClient mqttClient(client, MQTT_BROKER);
@@ -91,9 +92,6 @@ void setup() {
   //     Serial.println("Connection closed");
   // }
 
-  streamTemperature.observedProperty = "Temperature";
-  streamTemperature.datastreamId = "uuid-temperature";
-  streamTemperature.sensorId = "temp-sensor";
   mqttClient.setClientID("mayfly-enlab");
   // make sure to provide sitecode or else mqtt willnot work
   mqttClient.setSiteCode("urwl");

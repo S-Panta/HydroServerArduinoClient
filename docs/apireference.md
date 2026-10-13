@@ -26,7 +26,10 @@ struct Observation {
   const char *observedProperty;
   const char *datastreamId;
   const char *sensorId;
-  double value = 0.0;
+  double value;
+
+  Observation(const char *observedProperty, const char *datastreamId,
+              const char *sensorId, double value = NAN);
 };
 ```
 
@@ -35,7 +38,8 @@ struct Observation {
 | `observedProperty` | Name of what is measured, e.g. `"temperature"`. | MQTT topic |
 | `datastreamId` | UUID of the HydroServer / SensorThings datastream the value belongs to. | Payload |
 | `sensorId` | Your identifier for the physical sensor. | MQTT topic |
-| `value` | The measured value. Defaults to `0.0`. | Payload (`result`) |
+| `value` | The measured value. Optional in the constructor; defaults to `NAN` until set. | Payload (`result`) |
+
 
 The struct stores **pointers**, not copies. Strings you assign must stay valid for as long as the observation is used — string literals and global/static buffers are safe; local `char` arrays inside a function are not.
 
