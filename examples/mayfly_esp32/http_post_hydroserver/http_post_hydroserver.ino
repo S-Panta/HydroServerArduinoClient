@@ -49,7 +49,7 @@ TinyGsm modem(XbeeSerial);
 TinyGsmClient client(modem);
 
 HydroServerHTTPClient hsClient(client, serverAddress, serverPort);
-Observation temperature;
+Observation temperature = {"Temperature", datastreamId, "sensorid"};
 int currentHour = 3;
 
 String sendATCommand(String cmd, uint32_t timeout_ms = 2000) {
@@ -149,10 +149,6 @@ void setup() {
 
   connectWiFi();
   hsClient.setApiKey(apiKey);
-
-  temperature.datastreamId = datastreamId;
-  temperature.sensorId = "sensorid";
-  temperature.observedProperty = "Temperature";
 
   Serial.println("posting to hydroserver");
   double randomValue = random(0, 3000) / 10.0;

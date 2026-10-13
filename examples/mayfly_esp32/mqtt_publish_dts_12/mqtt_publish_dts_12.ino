@@ -60,9 +60,13 @@ int variableCount = sizeof(variableList) / sizeof(variableList[0]);
 VariableArray varArray;
 Logger dataLogger;
 
-Observation medianTurbidity;
-Observation waterTemperature;
-Observation varianceTurbidity;
+// observedProperty, datastreamId (from hydroserver), sensorId
+Observation medianTurbidity = {
+    "medianturbidity", "01a0f8c1-035d-7eb6-8125-35db98effc88", "DTS-12"};
+Observation waterTemperature = {
+    "watertemp", "01a0f8c3-a327-7f68-8143-b19ba3e327fd", "DTS-12"};
+Observation varianceTurbidity = {
+    "turbidityvariance", "01a0f8c2-137a-7d61-86e1-fa278bda2be7", "DTS-12"};
 
 void publishCycle() {
   String ts = Logger::formatDateTime_ISO8601(Logger::markedLocalUnixTime);
@@ -120,19 +124,6 @@ void setup() {
   } else {
     Serial.println("Connected to MQTT broker");
   };
-
-  // from hydroserver
-  medianTurbidity.datastreamId = "01a0f8c1-035d-7eb6-8125-35db98effc88";
-  waterTemperature.datastreamId = "01a0f8c3-a327-7f68-8143-b19ba3e327fd";
-  varianceTurbidity.datastreamId = "01a0f8c2-137a-7d61-86e1-fa278bda2be7";
-
-  medianTurbidity.sensorId = "DTS-12";
-  waterTemperature.sensorId = "DTS-12";
-  varianceTurbidity.sensorId = "DTS-12";
-
-  medianTurbidity.observedProperty = "medianturbidity";
-  waterTemperature.observedProperty = "watertemp";
-  varianceTurbidity.observedProperty = "turbidityvariance";
 
   Logger::setLoggerTimeZone(timeZone);
   loggerClock::setRTCOffset(0);

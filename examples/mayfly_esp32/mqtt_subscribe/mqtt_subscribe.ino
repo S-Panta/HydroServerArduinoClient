@@ -26,7 +26,7 @@ ExpressifESP32 &modem = esp32;
 
 HydroServerMQTTClient mqttClient(*modem.createClient(), MQTT_BROKER);
 
-Observation temperature;
+Observation temperature = {"temperature", "data-streamid", "sensorid"};
 
 unsigned long lastPublishTime = 0;
 const unsigned long publishInterval = 10000;
@@ -90,9 +90,6 @@ void setup() {
   };
 
   Serial.println("connection successful");
-  temperature.datastreamId = "data-streamid";
-  temperature.sensorId = "sensorid";
-  temperature.observedProperty = "temperature";
   mqttClient.onMessage(messageReceived);
   mqttClient.subscribe("python_publisher/sensorid/temperature_celsius");
   mqttClient.subscribe("python_publisher/sensorid/pressure_hpa");

@@ -30,9 +30,8 @@ TinyGsmClient client(modem);
 HydroServerMQTTClient mqttClient(client, MQTT_BROKER);
 
 const char *datastreamId = "019eae3f-3450-70db-b5d2-a55879b4d681";
-Observation streamTemperature;
-
-// Observation streamTemperature = { "Temperature", "uuid-temperature"};
+Observation streamTemperature = {"Temperature", "uuid-temperature",
+                                 "temp-sensor"};
 
 // initialize sensor
 Adafruit_SHT4x sht4 = Adafruit_SHT4x();
@@ -78,9 +77,6 @@ void setup() {
   delay(3000);
 
   connectToWifi();
-  streamTemperature.observedProperty = "Temperature";
-  streamTemperature.datastreamId = "uuid-temperature";
-
   mqttClient.setKeepAliveInterval(150000UL);
   mqttClient.setClientID("mayfly-enlab");
   mqttClient.setSiteCode("urwl");
