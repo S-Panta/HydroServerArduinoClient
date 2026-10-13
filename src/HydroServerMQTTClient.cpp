@@ -76,7 +76,9 @@ void HydroServerMQTTClient::setClientID(const char *clientId) {
 }
 
 void HydroServerMQTTClient::setSiteCode(const char *siteCode) {
-  _sitecode = siteCode;
+  if (siteCode != nullptr && strlen(siteCode) > 0) {
+    _sitecode = siteCode;
+  }
 }
 
 void HydroServerMQTTClient::setAuthentication(const char *username,
