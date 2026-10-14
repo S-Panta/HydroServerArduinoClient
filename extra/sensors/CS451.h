@@ -25,6 +25,15 @@
 #include "VariableBase.h"
 #include "sensors/SDI12Sensors.h"
 
+// NOTE: You have to preconfig the sensor before you run this code. This code
+// use "aM8!" as measurement command. This means, you have to preset how many
+// average of the measurement you want to take. To setup, run
+// "SDI12_command_test.ino" file and run `aXCONFIG1=0,4,100,0!`. Temperature
+// will be in celcius, Water depth in meter and the multiplier 100 will change
+// to centimeter Also do "aXCONFIG2 = 20!" to set instrument to make 20
+// measurements. CS451_MEASUREMENT_TIME_MS will be dependent on how many average
+// you want to take.
+
 // The CS451 measures water level (from pressure) and temperature
 #define CS451_NUM_VARIABLES 2
 // No calculated variables; level is reported directly by the sensor (mm)
@@ -34,7 +43,7 @@
 #define CS451_WARM_UP_TIME_MS 6000
 #define CS451_STABILIZATION_TIME_MS 30 // No stabilization wait required
 // Sensor configured to average 50 measurements (aXCONFIG2=50!)
-#define CS451_MEASUREMENT_TIME_MS 60000
+#define CS451_MEASUREMENT_TIME_MS 30000
 #define CS451_EXTRA_WAKE_TIME_MS 50
 
 // Variable names are from the ODM2 controlled vocabulary.
@@ -42,7 +51,7 @@
 #define CS451_PRESSURE_RESOLUTION 5
 #define CS451_PRESSURE_VAR_NUM 0
 #define CS451_PRESSURE_VAR_NAME "gageHeight"
-#define CS451_PRESSURE_UNIT_NAME "millimeter"
+#define CS451_PRESSURE_UNIT_NAME "centimeter"
 #define CS451_PRESSURE_DEFAULT_CODE "CS451GageHeight"
 
 // Temperature
