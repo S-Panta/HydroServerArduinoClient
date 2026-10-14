@@ -48,8 +48,6 @@ void setup() {
   Serial.print("Timeout value: ");
   Serial.println(mySDI12.TIMEOUT);
 
-
-
   Serial.println();
   Serial.println("Sensor ready.");
   Serial.println("Type an SDI-12 command and press Enter.");

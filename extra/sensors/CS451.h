@@ -40,7 +40,7 @@
 #define CS451_INC_CALC_VARIABLES 0
 
 // The CS451 wakes up instantly upon power application/SDI-12 break signal.
-#define CS451_WARM_UP_TIME_MS 6000
+#define CS451_WARM_UP_TIME_MS 10000
 #define CS451_STABILIZATION_TIME_MS 30 // No stabilization wait required
 // Sensor configured to average 50 measurements (aXCONFIG2=50!)
 #define CS451_MEASUREMENT_TIME_MS 30000

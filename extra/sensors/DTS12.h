@@ -33,7 +33,7 @@
 
 // When power is first applied to the DTS-12 a wipe cycle will occur which takes
 // about 5 seconds.
-#define DTS12_WARM_UP_TIME_MS 9000
+#define DTS12_WARM_UP_TIME_MS 10000
 #define DTS12_STABILIZATION_TIME_MS 0
 // the measurement time depends upon the ACK ttt response from SDI 12 commands,
 // check if there is any extra time delay

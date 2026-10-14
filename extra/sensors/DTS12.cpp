@@ -41,7 +41,7 @@ int8_t DTS12::startSDI12Measurement(bool isConcurrent) {
     if (MS_SDI12_USE_CRC) {
       startCommand += "C"; // Add C to request a CRC
     }
-    startCommand += "1"; // Adding 1 after M gives 7 variable
+    startCommand += "1";
     startCommand += "!"; // All commands end with '!'
     _SDI12Internal.clearBuffer();
     _SDI12Internal.sendCommand(startCommand, _extraWakeTime);
