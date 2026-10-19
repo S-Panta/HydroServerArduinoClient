@@ -20,7 +20,7 @@
 #include "arduino_secrets.h"
 #include <HydroServerHTTPClient.h>
 #include <Sodaq_DS3231.h>
-#include <modems/ExpressifESP32.h>
+#include <modems/EspressifESP32.h>
 
 // ---- Configuration -------------------------------------------------------
 const char *SERVER_HOST = "playground.hydroserver.org"; // no https://
@@ -34,8 +34,8 @@ HardwareSerial &beeSerial = Serial1; // Bee socket serial port
 const int8_t BEE_POWER_PIN = 18;     // Bee socket power pin on Mayfly v1.x
 const uint32_t BEE_BAUD = 57600;     // ESP32 AT firmware baud rate
 
-ExpressifESP32 modem(beeSerial, BEE_POWER_PIN);
-// ExpressifESP32 modem(beeSerial, BEE_POWER_PIN, Serial); // echo AT traffic
+EspressifESP32 modem(beeSerial, BEE_POWER_PIN);
+// EspressifESP32 modem(beeSerial, BEE_POWER_PIN, Serial); // echo AT traffic
 
 // HTTPS needs the TLS client. createSecureClient() allocates, so call it once.
 HydroServerHTTPClient hsClient(*modem.createSecureClient(), SERVER_HOST,

@@ -3,8 +3,8 @@
   Sabin Panta
 */
 
-#ifndef SRC_MODEMS_EXPRESSIFESP32_H_
-#define SRC_MODEMS_EXPRESSIFESP32_H_
+#ifndef SRC_MODEMS_ESPRESSIFESP32_H_
+#define SRC_MODEMS_ESPRESSIFESP32_H_
 
 #define TINY_GSM_MODEM_ESP32
 #define TINY_GSM_USE_WIFI true
@@ -14,11 +14,11 @@
 
 #include <StreamDebugger.h>
 
-class ExpressifESP32 : public Modem {
+class EspressifESP32 : public Modem {
 
 public:
-  ExpressifESP32(Stream &xbeeSerial, int8_t powerPin, Stream &debugStream);
-  ExpressifESP32(Stream &xbeeSerial, int8_t powerPin);
+  EspressifESP32(Stream &xbeeSerial, int8_t powerPin, Stream &debugStream);
+  EspressifESP32(Stream &xbeeSerial, int8_t powerPin);
 
   Client *createClient() override;
 

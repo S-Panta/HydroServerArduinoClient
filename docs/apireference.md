@@ -5,7 +5,7 @@ Reference for the public API of **HydroServerArduinoClient**. It describes what 
 - [Observation and payload](#observation-and-payload): `PublisherUtil.h`
 - [HydroServerMQTTClient](#hydroservermqttclient): `HydroServerMQTTClient.h`
 - [HydroServerHTTPClient](#hydroserverhttpclient): `HydroServerHTTPClient.h`
-- [Modem wrappers](#modem-wrappers): `modems/modem.h`, `modems/ExpressifESP32.h`, `modems/DigiXbeeS6B.h`
+- [Modem wrappers](#modem-wrappers): `modems/modem.h`, `modems/EspressifESP32.h`, `modems/DigiXbeeS6B.h`
 
 For installation and a walkthrough, see the [README](../README.md). For how the pieces fit together, see [architecture.md](architecture.md).
 
@@ -419,7 +419,7 @@ The body of the response to the most recent request, from either `publishObserva
 ## Modem wrappers
 
 ```cpp
-#include <modems/ExpressifESP32.h>   // or
+#include <modems/EspressifESP32.h>   // or
 #include <modems/DigiXbeeS6B.h>
 ```
 
@@ -446,13 +446,13 @@ Helpers for Wi-Fi Bee modules on the EnviroDIY Mayfly, built on [EnviroDIY's Tin
 HydroServerMQTTClient mqttClient(*modem.createClient(), MQTT_BROKER);
 ```
 
-### `ExpressifESP32`
+### `EspressifESP32`
 
 For an ESP32 Bee running Espressif AT firmware.
 
 ```cpp
-ExpressifESP32(Stream &serial, int8_t powerPin);
-ExpressifESP32(Stream &serial, int8_t powerPin, Stream &debugStream);
+EspressifESP32(Stream &serial, int8_t powerPin);
+EspressifESP32(Stream &serial, int8_t powerPin, Stream &debugStream);
 ```
 
 | Parameter | Description |
@@ -491,7 +491,7 @@ DigiXbeeS6B(Stream &serial, int8_t powerPin);
 DigiXbeeS6B(Stream &serial, int8_t powerPin, Stream &debugStream);
 ```
 
-Parameters are the same as for `ExpressifESP32`, except that the XBee S6B's serial port normally runs at **9600** baud.
+Parameters are the same as for `EspressifESP32`, except that the XBee S6B's serial port normally runs at **9600** baud.
 
 XBee-specific behaviour:
 
