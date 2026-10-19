@@ -1,111 +1,136 @@
-#include <Arduino.h>
+// ============================================================
+// mqtt_subscribe.ino
+//
+// EnviroDIY Mayfly + ESP32 Wi-Fi Bee: publish a simulated temperature
+// observation every 10 seconds AND print values received on two subscribed
+// topics.
+//
+// Hardware:  EnviroDIY Mayfly v1.x, ESP32 Bee (Espressif AT firmware)
+// Libraries: HydroServerArduinoClient, ArduinoMqttClient, ArduinoJson,
+//            EnviroDIY TinyGSM fork, StreamDebugger, Sodaq_DS3231
+//
+// Before uploading:
+//   1. Create arduino_secrets.h next to this sketch with
+//        #define WIFI_SSID "your-network"
+//        #define WIFI_PASS "your-password"   // use 0 for an open network
+//   2. Set MQTT_BROKER, SITE_CODE, CLIENT_ID and the subscribed topics below.
+//
+// subscribe("a/b/c") subscribes to <siteCode>/a/b/c. Incoming messages are
+// expected to be observation JSON payloads, like the ones this library sends.
+// ============================================================
 
-#define XbeeSerial Serial1
-#define XBEE_PWR 18
-
-#include "Sodaq_DS3231.h"
 #include "arduino_secrets.h"
 #include <HydroServerMQTTClient.h>
+#include <Sodaq_DS3231.h>
 #include <modems/ExpressifESP32.h>
 
-// wifi details
-const char *wifiId = WIFI_SSID;
-const char *wifiPwd = WIFI_PASS;
+// ---- Configuration -------------------------------------------------------
+const char *MQTT_BROKER = "test.mosquitto.org";
+const char *SITE_CODE = "uwrl";
+const char *CLIENT_ID = "mayfly-esp32-subscriber";
 
-const char *MQTT_BROKER = "raspberrypi1.mypc.usu.edu";
+// Topics to listen to, relative to the site code
+const char *TEMPERATURE_TOPIC = "python_publisher/sensorid/temperature_celsius";
+const char *PRESSURE_TOPIC = "python_publisher/sensorid/pressure_hpa";
 
-// for esp32, modembaud should be 57600
-const int32_t modemBaud = 57600;
+const unsigned long PUBLISH_INTERVAL_MS = 10000;
 
-ExpressifESP32 esp32(XbeeSerial, XBEE_PWR);
-// for debugging
-// ExpressifESP32 esp32(XbeeSerial, XBEE_PWR,Serial);
+// ---- Hardware ------------------------------------------------------------
+HardwareSerial &beeSerial = Serial1; // Bee socket serial port
+const int8_t BEE_POWER_PIN = 18;     // Bee socket power pin on Mayfly v1.x
+const uint32_t BEE_BAUD = 57600;     // ESP32 AT firmware baud rate
 
-// Create an extra reference to the modem by a generic name
-ExpressifESP32 &modem = esp32;
+ExpressifESP32 modem(beeSerial, BEE_POWER_PIN);
+// ExpressifESP32 modem(beeSerial, BEE_POWER_PIN, Serial); // echo AT traffic
 
 HydroServerMQTTClient mqttClient(*modem.createClient(), MQTT_BROKER);
 
-Observation temperature = {"temperature", "data-streamid", "sensorid"};
+Observation temperature = {"temperature", "YOUR-TEMPERATURE-DATASTREAM-UUID",
+                           "temp-sensor-1"};
 
-unsigned long lastPublishTime = 0;
-const unsigned long publishInterval = 10000;
+unsigned long lastPublishMs = 0;
 
-void setupDateTimeFromServer(uint32_t unix_time) {
-  rtc.begin();
-  rtc.setDateTime(unix_time);
-}
-
-char *getISO8601Time() {
+// ---- Helpers -------------------------------------------------------------
+const char *getISO8601Time() {
   DateTime now = rtc.now();
-  // create a temporary buffer to put the timestamp into
   static char buf[25];
   snprintf(buf, sizeof(buf), "%04d-%02d-%02dT%02d:%02d:%02dZ", now.year(),
            now.month(), now.date(), now.hour(), now.minute(), now.second());
   return buf;
 }
 
-void messageReceived(int messageSize) {
+// Runs inside poll() each time a message arrives on a subscribed topic.
+// The payload can only be read once: parse it with deserializePayload()
+// (or read it raw with readMessage()), then look up the value by topic.
+void onMessageReceived(int messageSize) {
+  String topic = mqttClient.messageTopic();
   mqttClient.deserializePayload();
-  Serial.println(mqttClient.getLatestValueofTopic(
-      "python_publisher/sensorid/temperature_celsius"));
+
+  Serial.print("Received on ");
+  Serial.print(topic);
+  Serial.print(": ");
+  if (topic.endsWith(TEMPERATURE_TOPIC)) {
+    Serial.println(mqttClient.getLatestValueofTopic(TEMPERATURE_TOPIC));
+  } else if (topic.endsWith(PRESSURE_TOPIC)) {
+    Serial.println(mqttClient.getLatestValueofTopic(PRESSURE_TOPIC));
+  }
 }
 
+// ---- Sketch --------------------------------------------------------------
 void setup() {
   Serial.begin(115200);
-  delay(1000);
-  Serial.print("Running sketch ");
-  // __FILE__ prints full path so need to extract filename from that path
-  Serial.println(__builtin_strrchr(__FILE__, '/') + 1);
-
-  XbeeSerial.begin(modemBaud);
+  beeSerial.begin(BEE_BAUD);
 
   modem.powerUp();
-  delay(1000);
+  delay(1000); // give the ESP32 time to boot
 
-  delay(3000);
-  Serial.println("powered up module");
-  if (!modem.connectToInternet(wifiId, wifiPwd)) {
-    Serial.println("Wifi is not connected");
+  Serial.println("Connecting to Wi-Fi");
+  if (!modem.connectToInternet(WIFI_SSID, WIFI_PASS)) {
+    Serial.println("Wi-Fi connection failed");
+    while (true) {
+    }
   }
-  Serial.println("Wifi is connected");
-  delay(2000);
-  uint32_t datetime = modem.getNISTTime();
-  Serial.println(datetime);
-  setupDateTimeFromServer(datetime);
+  Serial.println("Wi-Fi connected");
 
-  // This is important to make sure your mqtt works with esp32
+  rtc.begin();
+  rtc.setDateTime(modem.getNISTTime());
+  Serial.print("Clock set to ");
+  Serial.println(getISO8601Time());
+
+  // Required on the ESP32 before opening an MQTT connection
   modem.extraSetupForMQTT();
 
-  Serial.println("Initializing broker connection");
-  mqttClient.setSiteCode("uwrl");
-  mqttClient.setClientID("Arduinopublisher");
-  if (!mqttClient.connectToBroker()) {
-    Serial.println("Cannot connect to Broker. Connection Error is ");
-    Serial.println(mqttClient.getConnectionError());
-    // it make no sense to work further when connection to broker is not
-    // successful
-    while (1)
-      ;
-  };
+  mqttClient.setSiteCode(SITE_CODE);
+  mqttClient.setClientID(CLIENT_ID);
 
-  Serial.println("connection successful");
-  mqttClient.onMessage(messageReceived);
-  mqttClient.subscribe("python_publisher/sensorid/temperature_celsius");
-  mqttClient.subscribe("python_publisher/sensorid/pressure_hpa");
+  Serial.print("Connecting to MQTT broker ");
+  Serial.println(MQTT_BROKER);
+  if (!mqttClient.connectToBroker()) {
+    Serial.print("MQTT connection failed, error code: ");
+    Serial.println(mqttClient.getConnectionError());
+    while (true) {
+    }
+  }
+  Serial.println("Connected to MQTT broker");
+
+  mqttClient.onMessage(onMessageReceived);
+  mqttClient.subscribe(TEMPERATURE_TOPIC);
+  mqttClient.subscribe(PRESSURE_TOPIC);
 }
 
 void loop() {
   mqttClient.poll();
 
-  unsigned long now = millis();
-  if (now - lastPublishTime >= publishInterval) {
-    lastPublishTime = now;
+  if (millis() - lastPublishMs >= PUBLISH_INTERVAL_MS) {
+    lastPublishMs = millis();
 
-    float randomTemp = random(20, 25);
-    temperature.value = randomTemp;
-    mqttClient.publishObservation(temperature, getISO8601Time());
+    // Simulated reading: replace with your own sensor code
+    temperature.value = random(200, 251) / 10.0;
 
-    Serial.println("published");
+    if (mqttClient.publishObservation(temperature, getISO8601Time())) {
+      Serial.println("Observation published");
+    } else {
+      Serial.println("Publish failed (not connected?)");
+    }
   }
 }

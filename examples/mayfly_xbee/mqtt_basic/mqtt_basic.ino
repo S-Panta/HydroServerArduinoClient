@@ -1,117 +1,135 @@
-#define XbeeSerial Serial1
-#define XbeePower 18
-#define TINY_GSM_MODEM_XBEE
-#define TINY_GSM_USE_WIFI true
+// ============================================================
+// mqtt_basic.ino
+//
+// EnviroDIY Mayfly + Digi XBee S6B Wi-Fi Bee: connect to Wi-Fi, set the
+// Mayfly's DS3231 clock from NIST, connect to an MQTT broker and publish
+// the air temperature from the Mayfly's on-board SHT4x sensor every
+// 30 seconds.
+//
+// Hardware:  EnviroDIY Mayfly v1.x (on-board SHT4x), Digi XBee S6B Wi-Fi Bee
+// Libraries: HydroServerArduinoClient, ArduinoMqttClient, ArduinoJson,
+//            EnviroDIY TinyGSM fork, StreamDebugger, Sodaq_DS3231,
+//            Adafruit SHT4x
+//
+// Before uploading:
+//   1. Create arduino_secrets.h next to this sketch with
+//        #define WIFI_SSID "your-network"
+//        #define WIFI_PASS "your-password"   // use 0 for an open network
+//   2. Set MQTT_BROKER, SITE_CODE and CLIENT_ID below.
+//
+// The XBee S6B has no TLS support in this library: use plain MQTT (1883).
+// ============================================================
 
+#include "arduino_secrets.h"
+#include <Adafruit_SHT4x.h>
 #include <HydroServerMQTTClient.h>
-#include <TinyGsmClient.h>
-
-// for internal sensor in mayfly
-#include "Adafruit_SHT4x.h"
-#include <Wire.h>
-
-// for debug
-// #define TINY_GSM_DEBUG Serial
-// for mayfly, it is recommended to use hostname
-// if ip is used, the ip should be updated in DL using xctu
-// const char* MQTT_BROKER   = "54.36.178.49";
-// const char* MQTT_BROKER   = "broker.hivemq.com";
-
-const char *MQTT_BROKER = "144.39.174.90";
-
-// uncomment this to see debug from TinyGSM client
-// #include <StreamDebugger.h>
-// StreamDebugger debugger(XbeeSerial, Serial);
-// TinyGsm        modem(debugger);
-
-// initialize client
-TinyGsm modem(XbeeSerial);
-TinyGsmClient client(modem);
-HydroServerMQTTClient mqttClient(client, MQTT_BROKER);
-
-const char *datastreamId = "019eae3f-3450-70db-b5d2-a55879b4d681";
-Observation streamTemperature = {"Temperature", "uuid-temperature",
-                                 "temp-sensor"};
-
-// initialize sensor
-Adafruit_SHT4x sht4 = Adafruit_SHT4x();
-
-// for realtime clock
 #include <Sodaq_DS3231.h>
+#include <modems/DigiXbeeS6B.h>
 
-void connectToWifi() {
-  // using xbee, the wifi should be preconfigured with xctu.
-  Serial.println("connecting to wifi");
-  if (!modem.waitForNetwork()) {
-    Serial.println("Wifi is not connected");
-    delay(10000);
-    while (1)
-      ;
-  }
+// ---- Configuration -------------------------------------------------------
+// Prefer a hostname. If you use an IP address, the XBee's destination
+// address (DL) may also need updating in XCTU.
+const char *MQTT_BROKER = "test.mosquitto.org";
+const char *SITE_CODE = "uwrl";
+const char *CLIENT_ID = "mayfly-xbee-01";
 
-  Serial.println("Wifi is connected");
-  delay(3000);
-}
+const unsigned long PUBLISH_INTERVAL_MS = 30000;
 
-String getISO8601Timestamp() {
+// ---- Hardware ------------------------------------------------------------
+HardwareSerial &beeSerial = Serial1; // Bee socket serial port
+const int8_t BEE_POWER_PIN = 18;     // Bee socket power pin on Mayfly v1.x
+const uint32_t BEE_BAUD = 9600;      // XBee S6B default baud rate
+
+DigiXbeeS6B modem(beeSerial, BEE_POWER_PIN);
+// To echo all AT commands to the Serial Monitor while debugging, use:
+// DigiXbeeS6B modem(beeSerial, BEE_POWER_PIN, Serial);
+
+// createClient() allocates a new client, so call it once, here.
+HydroServerMQTTClient mqttClient(*modem.createClient(), MQTT_BROKER);
+
+Adafruit_SHT4x sht4;
+
+Observation airTemperature = {"air_temperature",
+                              "YOUR-AIR-TEMPERATURE-DATASTREAM-UUID", "sht4x"};
+
+unsigned long lastPublishMs = 0;
+
+// ---- Helpers -------------------------------------------------------------
+const char *getISO8601Time() {
   DateTime now = rtc.now();
-  char buf[25];
+  static char buf[25];
   snprintf(buf, sizeof(buf), "%04d-%02d-%02dT%02d:%02d:%02dZ", now.year(),
            now.month(), now.date(), now.hour(), now.minute(), now.second());
-  return String(buf);
+  return buf;
 }
 
+// ---- Sketch --------------------------------------------------------------
 void setup() {
-
   Serial.begin(115200);
-  delay(2000);
-  pinMode(XbeePower, OUTPUT);
-  digitalWrite(XbeePower, HIGH);
-  delay(2000);
+  beeSerial.begin(BEE_BAUD);
 
-  Serial.print("Running sketch ");
-  // __FILE__ prints full path so need to extract filename from that path
-  Serial.println(__builtin_strrchr(__FILE__, '/') + 1);
+  modem.powerUp();
+  delay(2000); // give the XBee time to boot
 
-  XbeeSerial.begin(9600);
-  delay(3000);
+  Serial.println("Connecting to Wi-Fi");
+  if (!modem.connectToInternet(WIFI_SSID, WIFI_PASS)) {
+    Serial.println("Wi-Fi connection failed");
+    while (true) {
+    }
+  }
+  Serial.println("Wi-Fi connected");
 
-  connectToWifi();
-  mqttClient.setKeepAliveInterval(150000UL);
-  mqttClient.setClientID("mayfly-enlab");
-  mqttClient.setSiteCode("urwl");
-  if (!mqttClient.connectToBroker()) {
-    Serial.println("Cannot connect to Broker. Connection Error is ");
-    Serial.println(mqttClient.getConnectionError());
-    // it make no sense to work further when connection to broker is not
-    // successful
-    while (1)
-      ;
-  };
-
-  Serial.println("Connection to Broker Successful");
+  // getNISTTime() returns seconds since 2000-01-01 (the DS3231's epoch),
+  // or 0 if the time server could not be reached
+  rtc.begin();
+  uint32_t nistTime = modem.getNISTTime();
+  if (nistTime != 0) {
+    rtc.setDateTime(nistTime);
+  } else {
+    Serial.println("Could not reach the time server; clock not set");
+  }
+  Serial.print("Clock reads ");
+  Serial.println(getISO8601Time());
 
   if (!sht4.begin()) {
     Serial.println("SHT4x sensor not found");
-    while (1)
-      ;
+    while (true) {
+    }
   }
-  Serial.println("Found SHT4x sensor");
-  // three precision is available
 
-  rtc.begin();
-  rtc.setDateTime(DateTime(2026, 7, 7, 14, 30, 0, 2));
+  // Does nothing on the XBee, but keeps the sketch the same shape as the
+  // ESP32 version
+  modem.extraSetupForMQTT();
+
+  mqttClient.setSiteCode(SITE_CODE);
+  mqttClient.setClientID(CLIENT_ID);
+
+  Serial.print("Connecting to MQTT broker ");
+  Serial.println(MQTT_BROKER);
+  if (!mqttClient.connectToBroker()) {
+    Serial.print("MQTT connection failed, error code: ");
+    Serial.println(mqttClient.getConnectionError());
+    while (true) {
+    }
+  }
+  Serial.println("Connected to MQTT broker");
 }
 
 void loop() {
   mqttClient.poll();
-  sensors_event_t humidity, temp;
 
-  mqttClient.poll();
-  sht4.getEvent(&humidity, &temp);
-  String currentTimeStamp = getISO8601Timestamp();
-  streamTemperature.value = temp.temperature;
-  mqttClient.publishObservation(streamTemperature, currentTimeStamp.c_str());
-  Serial.println(mqttClient.getConnectionError());
-  delay(5000);
+  if (millis() - lastPublishMs >= PUBLISH_INTERVAL_MS) {
+    lastPublishMs = millis();
+
+    sensors_event_t humidity, temperature;
+    sht4.getEvent(&humidity, &temperature);
+    airTemperature.value = temperature.temperature;
+
+    if (mqttClient.publishObservation(airTemperature, getISO8601Time())) {
+      Serial.print("Published to ");
+      Serial.println(mqttClient.getObservationTopic(airTemperature));
+    } else {
+      Serial.println("Publish failed (not connected?)");
+    }
+  }
 }
