@@ -1,4 +1,5 @@
-examples/*/*/arduino_secrets.h
-testing_example/*/arduino_secrets.h
+**/arduino_secrets.h
+**/mqtt_secrets.h
+
+# macOS
 .DS_Store
-*/.DS_Store

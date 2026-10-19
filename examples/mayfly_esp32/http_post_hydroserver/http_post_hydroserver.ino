@@ -1,175 +1,109 @@
-#include <Arduino.h>
-
-// for esp32
-#define TINY_GSM_MODEM_ESP32
-
-// for xbee,delete esp32 and uncomment the line below this
-// #define TINY_GSM_MODEM_XBEE
-#define XbeeSerial Serial1
-
-// for debugging output of tinygsm
-// #define TINY_GSM_DEBUG Serial
-
-#include <TinyGsmClient.h>
-#define XBEE_PWR 18
-
-#define TINY_GSM_USE_GPRS false
-#define TINY_GSM_USE_WIFI true
+// ============================================================
+// http_post_hydroserver.ino
+//
+// EnviroDIY Mayfly + ESP32 Wi-Fi Bee: post a simulated temperature
+// observation to a HydroServer instance over plain HTTP (port 80) every
+// 30 seconds. Use this for a local/self-hosted HydroServer without TLS;
+// for the hosted playground use https_post_hydroserver instead.
+//
+// Hardware:  EnviroDIY Mayfly v1.x, ESP32 Bee (Espressif AT firmware)
+// Libraries: HydroServerArduinoClient, ArduinoHttpClient, ArduinoJson,
+//            EnviroDIY TinyGSM fork, StreamDebugger, Sodaq_DS3231
+//
+// Before uploading:
+//   1. Create arduino_secrets.h next to this sketch with
+//        #define WIFI_SSID "your-network"
+//        #define WIFI_PASS "your-password"   // use 0 for an open network
+//        #define LOCAL_API_KEY "your-hydroserver-api-key"
+//   2. Set SERVER_HOST and DATASTREAM_ID below.
+// ============================================================
 
 #include "arduino_secrets.h"
 #include <HydroServerHTTPClient.h>
+#include <Sodaq_DS3231.h>
+#include <modems/ExpressifESP32.h>
 
-// wifi details
-const char *wifiId = "USU-guest";
-const char *wifiPwd = 0;
+// ---- Configuration -------------------------------------------------------
+// Hostname or IP address of the machine running HydroServer, as seen from
+// the logger's network. "localhost" would point the logger at itself.
+const char *SERVER_HOST = "192.168.1.100";
+const uint16_t SERVER_PORT = 80;
+const char *DATASTREAM_ID = "YOUR-TEMPERATURE-DATASTREAM-UUID";
 
-// for local instance
-/*
-  The server address is the url of the host machine where hydroserver is
-  deployed. URL of localhost would point the machine to itself (for example
-  arduino will point at itself)
-*/
-const char *serverAddress = "144.39.67.171";
-// http port
-const int serverPort = 80;
-// the api key from hydroserver local instance
-// this is stored in arduino_secrets file
-const char *apiKey = LOCAL_API_KEY;
+const unsigned long PUBLISH_INTERVAL_MS = 30000;
 
-// the datastream id from hydroserver
-const char *datastreamId = "019eae3f-3450-70db-b5d2-a55879b4d681";
+// ---- Hardware ------------------------------------------------------------
+HardwareSerial &beeSerial = Serial1; // Bee socket serial port
+const int8_t BEE_POWER_PIN = 18;     // Bee socket power pin on Mayfly v1.x
+const uint32_t BEE_BAUD = 57600;     // ESP32 AT firmware baud rate
 
-// for debugging of AT commands
-#include <StreamDebugger.h>
-// StreamDebugger debugger(Serial1, Serial);
-// TinyGsm        modem(debugger);
+ExpressifESP32 modem(beeSerial, BEE_POWER_PIN);
+// ExpressifESP32 modem(beeSerial, BEE_POWER_PIN, Serial); // echo AT traffic
 
-// for normal mode
-TinyGsm modem(XbeeSerial);
-TinyGsmClient client(modem);
+// Plain HTTP uses the normal TCP client. createClient() allocates, so call
+// it once.
+HydroServerHTTPClient hsClient(*modem.createClient(), SERVER_HOST, SERVER_PORT,
+                               LOCAL_API_KEY);
 
-HydroServerHTTPClient hsClient(client, serverAddress, serverPort);
-Observation temperature = {"Temperature", datastreamId, "sensorid"};
-int currentHour = 3;
+Observation temperature = {"temperature", DATASTREAM_ID, "temp-sensor-1"};
 
-String sendATCommand(String cmd, uint32_t timeout_ms = 2000) {
-  while (XbeeSerial.available()) {
-    XbeeSerial.read();
-  }
+unsigned long lastPublishMs = 0;
 
-  Serial.print(">> ");
-  Serial.println(cmd);
-
-  XbeeSerial.print(cmd);
-  XbeeSerial.print("\r\n");
-
-  String response = "";
-  uint32_t start = millis();
-  while (millis() - start < timeout_ms) {
-    while (XbeeSerial.available()) {
-      char c = XbeeSerial.read();
-      response += c;
-      start = millis();
-    }
-    if (response.endsWith("OK\r\n") || response.endsWith("ERROR\r\n")) {
-      break;
-    }
-  }
-
-  Serial.print("<< ");
-  Serial.println(response);
-  Serial.println("....................................");
-
-  return response;
+// ---- Helpers -------------------------------------------------------------
+const char *getISO8601Time() {
+  DateTime now = rtc.now();
+  static char buf[25];
+  snprintf(buf, sizeof(buf), "%04d-%02d-%02dT%02d:%02d:%02dZ", now.year(),
+           now.month(), now.date(), now.hour(), now.minute(), now.second());
+  return buf;
 }
 
-void connectWiFi() {
-
-  // the wifi setup is needed only for instanting modem for first time
-  // this line is not needed for xbee s6b wifi module as wifi setup is already
-  // done in the modem Serial.print(F("Setting SSID/password...")); if
-  // (!modem.networkConnect(wifiId, 0)) {
-  //   Serial.println(" fail");
-  //   delay(10000);
-  //   while(1);
-  // }
-
-  if (!modem.waitForNetwork()) {
-    Serial.println("Wifi is not connected");
-    delay(10000);
-    while (1)
-      ;
-  }
-
-  Serial.println("Wifi is connected");
-
-  if (modem.isNetworkConnected()) {
-    Serial.println("Network connected");
-  }
-
-  Serial.print("Local IP: ");
-  Serial.println(modem.localIP());
-
-  // sendATCommand("AT+CIPRECVMODE?");
-  // This is important to make sure your mqtt works with esp32
-  sendATCommand("AT+CIPRECVMODE=1");
-  Serial.println("the firmware set to passive");
-  delay(3000);
-
-  // do this only when the debugger is on
-  // String cmd = String("AT+CIPSTART=0,\"TCP\",\"") + serverAddress + "\"," +
-  // String(serverPort); sendATCommand(cmd);
-}
-
-String getNextTimestampISO8601() {
-  char buffer[25];
-  snprintf(buffer, sizeof(buffer), "2026-07-17T%02d:59:43Z", currentHour);
-  currentHour = (currentHour + 1) % 24;
-  return String(buffer);
-}
-
+// ---- Sketch --------------------------------------------------------------
 void setup() {
   Serial.begin(115200);
-  delay(1000);
-  Serial.print("Running sketch ");
-  // __FILE__ prints full path so need to extract filename from that path
-  Serial.println(__builtin_strrchr(__FILE__, '/') + 1);
+  beeSerial.begin(BEE_BAUD);
 
-  pinMode(XBEE_PWR, OUTPUT);
-  digitalWrite(XBEE_PWR, HIGH);
+  modem.powerUp();
+  delay(1000); // give the ESP32 time to boot
 
-  // For xbee, comment this line out, xbee runs on 9600 baud rate
-  XbeeSerial.begin(57600);
-  // XbeeSerial.begin(9600);
+  Serial.println("Connecting to Wi-Fi");
+  if (!modem.connectToInternet(WIFI_SSID, WIFI_PASS)) {
+    Serial.println("Wi-Fi connection failed");
+    while (true) {
+    }
+  }
+  Serial.println("Wi-Fi connected");
 
-  delay(3000);
+  rtc.begin();
+  rtc.setDateTime(modem.getNISTTime());
+  Serial.print("Clock set to ");
+  Serial.println(getISO8601Time());
 
-  // For xbee, comment this line out
-  modem.init();
+  // Puts the ESP32 in passive receive mode (AT+CIPRECVMODE=1). Despite the
+  // name, plain TCP connections such as HTTP need this too.
+  modem.extraSetupForMQTT();
 
-  connectWiFi();
-  hsClient.setApiKey(apiKey);
-
-  Serial.println("posting to hydroserver");
-  double randomValue = random(0, 3000) / 10.0;
-  String timestamp = getNextTimestampISO8601();
-  temperature.value = randomValue;
-
-  int status = hsClient.publishObservation(temperature, timestamp.c_str());
-  Serial.println(status);
-  Serial.print(hsClient.getResponseBody());
-  Serial.println(randomValue);
+  if (!hsClient.isDatastreamAvailable(DATASTREAM_ID)) {
+    Serial.println("Datastream not found or not readable with this API key:");
+    Serial.println(hsClient.getLastResponseBody());
+    while (true) {
+    }
+  }
+  Serial.println("Datastream found, posting observations");
 }
 
 void loop() {
-  // Serial.println("Injecting data to hydroserver");
-  // float randomTemp;
-  // randomTemp = random(20,25);
-  // temperature.value = randomTemp;
-  // int status = hsClient.publishObservation(temperature,
-  // "2026-06-19T00:00:00Z"); Serial.println(status);
-  // Serial.println(randomTemp);
+  if (millis() - lastPublishMs >= PUBLISH_INTERVAL_MS) {
+    lastPublishMs = millis();
 
-  //   Serial.print(hsClient.getResponseBody());
-  //   delay(30000);
+    // Simulated reading: replace with your own sensor code
+    temperature.value = random(200, 251) / 10.0;
+
+    if (hsClient.publishObservation(temperature, getISO8601Time())) {
+      Serial.println("Observation posted");
+    } else {
+      Serial.print("Post failed, server replied: ");
+      Serial.println(hsClient.getLastResponseBody());
+    }
+  }
 }

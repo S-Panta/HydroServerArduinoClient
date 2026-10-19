@@ -1,109 +1,122 @@
-#include <Arduino.h>
+// ============================================================
+// mqtt_basic.ino
+//
+// EnviroDIY Mayfly + ESP32 Wi-Fi Bee: connect to Wi-Fi, set the Mayfly's
+// DS3231 clock from an NTP server, connect to an MQTT broker and publish a
+// simulated temperature observation at the start of every minute.
+//
+// Hardware:  EnviroDIY Mayfly v1.x, ESP32 Bee (Espressif AT firmware)
+// Libraries: HydroServerArduinoClient, ArduinoMqttClient, ArduinoJson,
+//            EnviroDIY TinyGSM fork, StreamDebugger, Sodaq_DS3231
+//
+// Before uploading:
+//   1. Create arduino_secrets.h next to this sketch with
+//        #define WIFI_SSID "your-network"
+//        #define WIFI_PASS "your-password"   // use 0 for an open network
+//   2. Set MQTT_BROKER, SITE_CODE and CLIENT_ID below.
+// ============================================================
 
-#define XbeeSerial Serial1
-#define XBEE_PWR 18
-
-#include "Sodaq_DS3231.h"
 #include "arduino_secrets.h"
 #include <HydroServerMQTTClient.h>
+#include <Sodaq_DS3231.h>
 #include <modems/ExpressifESP32.h>
 
-// wifi details
-const char *wifiId = WIFI_SSID;
-const char *wifiPwd = WIFI_PASS;
+// ---- Configuration -------------------------------------------------------
+const char *MQTT_BROKER = "test.mosquitto.org";
+const char *SITE_CODE = "uwrl";
+const char *CLIENT_ID = "mayfly-esp32-01";
 
-const char *MQTT_BROKER = "raspberrypi1.mypc.usu.edu";
-// const char *MQTT_BROKER = "test.mosquitto.org";
+// Publish when the clock reaches a multiple of this many minutes
+const uint32_t PUBLISH_INTERVAL_MINUTES = 1;
 
-// for esp32, modembaud should be 57600
-const int32_t modemBaud = 57600;
+// ---- Hardware ------------------------------------------------------------
+HardwareSerial &beeSerial = Serial1; // Bee socket serial port
+const int8_t BEE_POWER_PIN = 18;     // Bee socket power pin on Mayfly v1.x
+const uint32_t BEE_BAUD = 57600;     // ESP32 AT firmware baud rate
 
-ExpressifESP32 esp32(XbeeSerial, XBEE_PWR);
-// for debugging
-// ExpressifESP32 esp32(XbeeSerial, XBEE_PWR,Serial);
+ExpressifESP32 modem(beeSerial, BEE_POWER_PIN);
+// To echo all AT commands to the Serial Monitor while debugging, use:
+// ExpressifESP32 modem(beeSerial, BEE_POWER_PIN, Serial);
 
-// Create an extra reference to the modem by a generic name
-ExpressifESP32 &modem = esp32;
-
+// createClient() allocates a new client, so call it once, here.
 HydroServerMQTTClient mqttClient(*modem.createClient(), MQTT_BROKER);
 
-Observation temperature = {"temperature_celsius", "data-streamid", "sensorid"};
+Observation temperature = {"temperature", "YOUR-TEMPERATURE-DATASTREAM-UUID",
+                           "temp-sensor-1"};
 
-const uint32_t loggingIntervalMinutes = 1;
 uint32_t lastPublishedEpoch = 0;
 
-void setupDateTimeFromServer(uint32_t unix_time) {
-  rtc.begin();
-  rtc.setDateTime(unix_time);
-}
-
-char *getISO8601Time(DateTime &now) {
-  // create a temporary buffer to put the timestamp into
+// ---- Helpers -------------------------------------------------------------
+// Formats a DS3231 time as ISO 8601 UTC, e.g. 2026-09-23T18:30:00Z.
+const char *getISO8601Time(DateTime &now) {
   static char buf[25];
   snprintf(buf, sizeof(buf), "%04d-%02d-%02dT%02d:%02d:%02dZ", now.year(),
            now.month(), now.date(), now.hour(), now.minute(), now.second());
   return buf;
 }
 
+// ---- Sketch --------------------------------------------------------------
 void setup() {
   Serial.begin(115200);
-  delay(1000);
-  Serial.print("Running sketch ");
-  // __FILE__ prints full path so need to extract filename from that path
-  Serial.println(__builtin_strrchr(__FILE__, '/') + 1);
-
-  XbeeSerial.begin(modemBaud);
+  beeSerial.begin(BEE_BAUD);
 
   modem.powerUp();
-  delay(1000);
+  delay(1000); // give the ESP32 time to boot
 
-  Serial.println("powered up module");
-  if (!modem.connectToInternet(wifiId, wifiPwd)) {
-    Serial.println("Wifi is not connected");
+  Serial.println("Connecting to Wi-Fi");
+  if (!modem.connectToInternet(WIFI_SSID, WIFI_PASS)) {
+    Serial.println("Wi-Fi connection failed");
+    while (true) {
+    }
   }
-  Serial.println("Wifi is connected");
-  delay(2000);
-  uint32_t datetime = modem.getNISTTime();
-  setupDateTimeFromServer(datetime);
-  Serial.println("datetime setup from server completed");
+  Serial.println("Wi-Fi connected");
 
-  // This is important to make sure your mqtt works with esp32
+  // getNISTTime() returns seconds since 2000-01-01, the DS3231's epoch
+  rtc.begin();
+  rtc.setDateTime(modem.getNISTTime());
+  DateTime now = rtc.now();
+  Serial.print("Clock set to ");
+  Serial.println(getISO8601Time(now));
+
+  // Required on the ESP32 before opening an MQTT connection
   modem.extraSetupForMQTT();
 
-  Serial.println("Initializing broker connection");
-  mqttClient.setSiteCode("uwrl");
-  mqttClient.setClientID("Arduinopublisher");
-  mqttClient.setKeepAliveInterval(100);
-  if (!mqttClient.connectToBroker()) {
-    Serial.println("Cannot connect to Broker. Connection Error is ");
-    Serial.println(mqttClient.getConnectionError());
-    // it make no sense to work further when connection to broker is not
-    // successful
-    while (1)
-      ;
-  };
+  mqttClient.setSiteCode(SITE_CODE);
+  mqttClient.setClientID(CLIENT_ID);
+  mqttClient.setKeepAliveInterval(100); // seconds
 
-  Serial.println("connection successful");
+  Serial.print("Connecting to MQTT broker ");
+  Serial.println(MQTT_BROKER);
+  if (!mqttClient.connectToBroker()) {
+    Serial.print("MQTT connection failed, error code: ");
+    Serial.println(mqttClient.getConnectionError());
+    while (true) {
+    }
+  }
+  Serial.println("Connected to MQTT broker");
 }
 
 void loop() {
   mqttClient.poll();
 
   DateTime now = rtc.now();
-  uint32_t markedEpochTime = now.getEpoch();
+  uint32_t epoch = now.getEpoch();
 
-  // fires exactly on the clock boundary (e.g. :00 of every interval-th minute)
-  bool onInterval = (markedEpochTime != 0) &&
-                    (markedEpochTime % (loggingIntervalMinutes * 60) == 0);
+  // True only on the clock boundary (e.g. second :00 of every interval)
+  bool onInterval = (epoch % (PUBLISH_INTERVAL_MINUTES * 60) == 0);
 
-  // guard so we only publish once per boundary, not for the whole second
-  if (onInterval && markedEpochTime != lastPublishedEpoch) {
-    lastPublishedEpoch = markedEpochTime;
+  // The boundary lasts a whole second; publish only once per boundary
+  if (onInterval && epoch != lastPublishedEpoch) {
+    lastPublishedEpoch = epoch;
 
-    float randomTemp = random(20, 25);
-    temperature.value = randomTemp;
-    mqttClient.publishObservation(temperature, getISO8601Time(now));
+    // Simulated reading: replace with your own sensor code
+    temperature.value = random(200, 251) / 10.0;
 
-    Serial.println("published");
+    if (mqttClient.publishObservation(temperature, getISO8601Time(now))) {
+      Serial.print("Published to ");
+      Serial.println(mqttClient.getObservationTopic(temperature));
+    } else {
+      Serial.println("Publish failed (not connected?)");
+    }
   }
 }
