@@ -2,23 +2,22 @@
   This file is part of HydroServerArduinoClient library.
   Sabin Panta
 */
-#include <modems/EspressifESP32.h>
+#include <modems/ESP32Bee.h>
 
-EspressifESP32::EspressifESP32(Stream &xbeeSerial, int8_t powerPin)
+ESP32Bee::ESP32Bee(Stream &xbeeSerial, int8_t powerPin)
     : Modem(powerPin), _modem(xbeeSerial) {}
 
-EspressifESP32::EspressifESP32(Stream &xbeeSerial, int8_t powerPin,
-                               Stream &debugStream)
+ESP32Bee::ESP32Bee(Stream &xbeeSerial, int8_t powerPin, Stream &debugStream)
     : Modem(powerPin), _debugger(xbeeSerial, debugStream), _modem(_debugger) {}
 
-Client *EspressifESP32::createClient() { return new TinyGsmClient(_modem); }
+Client *ESP32Bee::createClient() { return new TinyGsmClient(_modem); }
 
-Client *EspressifESP32::createSecureClient() {
+Client *ESP32Bee::createSecureClient() {
   return new TinyGsmClientSecure(_modem);
 }
 
-bool EspressifESP32::connectToInternet(const char *ssid, const char *password,
-                                       uint32_t maxConnectionTime) {
+bool ESP32Bee::connectToInternet(const char *ssid, const char *password,
+                                 uint32_t maxConnectionTime) {
   // make sure the modem was powered on first
   powerUp();
   // This does some configuration in the Esp32 modem
@@ -42,12 +41,10 @@ bool EspressifESP32::connectToInternet(const char *ssid, const char *password,
   return true;
 }
 
-bool EspressifESP32::isInternetAvailable() {
-  return _modem.isNetworkConnected();
-}
+bool ESP32Bee::isInternetAvailable() { return _modem.isNetworkConnected(); }
 
 // returns time in utc
-uint32_t EspressifESP32::getNISTTime() {
+uint32_t ESP32Bee::getNISTTime() {
   // opens UDP socket for time server
   // by default, the time server is pool.ntp.org.
   // by default, it returns UTC time
@@ -65,14 +62,14 @@ uint32_t EspressifESP32::getNISTTime() {
   return currentdateTime;
 }
 
-void EspressifESP32::extraSetupForMQTT() {
+void ESP32Bee::extraSetupForMQTT() {
   // See
   // :https://docs.espressif.com/projects/esp-at/en/release-v2.4.0.0/esp32/AT_Command_Set/TCP-IP_AT_Commands.html#at-ciprecvmode-query-set-socket-receiving-mode
   // This should be done before opening tcp connection
   _modem.sendAT(GF("+CIPRECVMODE=1"));
 }
 
-void EspressifESP32::extraSetupForHTTPS(const char *host, const int port) {
+void ESP32Bee::extraSetupForHTTPS(const char *host, const int port) {
   // Some HTTPS servers(like playground instance of hydroserver) host multiple
   // domains on the same IP address. During the TLS handshake, the modem must
   // send the hostname using Server Name Indication so the server can present

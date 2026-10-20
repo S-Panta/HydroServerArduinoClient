@@ -237,12 +237,12 @@ On the Mayfly, the Wi-Fi Bee is driven by AT commands over `Serial1`. The modem 
 ```cpp
 #include <HydroServerMQTTClient.h>
 #include <Sodaq_DS3231.h>
-#include <modems/EspressifESP32.h>   // or <modems/DigiXbeeS6B.h>; include only one
+#include <modems/ESP32Bee.h>   // or <modems/DigiXbeeS6B.h>; include only one
 #include "arduino_secrets.h"
 
 // Bee serial port and Bee power pin (18 on Mayfly v1.x)
-EspressifESP32 modem(Serial1, 18);
-// EspressifESP32 modem(Serial1, 18, Serial);   // also echoes AT traffic to Serial
+ESP32Bee modem(Serial1, 18);
+// ESP32Bee modem(Serial1, 18, Serial);   // also echoes AT traffic to Serial
 
 // createClient() allocates a new client, so call it once at global scope
 HydroServerMQTTClient mqttClient(*modem.createClient(), "broker.example.org");
