@@ -17,10 +17,10 @@ const char *wifiPwd = WIFI_PASS;
 
 // #include <modems/DigiXbeeS6B.h>
 
-#include <modems/EspressifESP32.h>
+#include <modems/ESP32Bee.h>
 
 
-EspressifESP32 xbee(XbeeSerial,XbeePower);
+ESP32Bee xbee(XbeeSerial,XbeePower);
 HydroServerMQTTClient mqttClient(
     *xbee.createClient(),
     MQTT_BROKER

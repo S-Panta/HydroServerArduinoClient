@@ -27,7 +27,7 @@
 #include "arduino_secrets.h"
 #include <HydroServerMQTTClient.h>
 #include <Sodaq_DS3231.h>
-#include <modems/EspressifESP32.h>
+#include <modems/ESP32Bee.h>
 
 // ---- Configuration -------------------------------------------------------
 const char *MQTT_BROKER = "test.mosquitto.org";
@@ -54,7 +54,7 @@ HardwareSerial &beeSerial = Serial1; // Bee socket serial port
 const int8_t BEE_POWER_PIN = 18;     // Bee socket power pin on Mayfly v1.x
 const uint32_t BEE_BAUD = 57600;     // ESP32 AT firmware baud rate
 
-EspressifESP32 modem(beeSerial, BEE_POWER_PIN);
+ESP32Bee modem(beeSerial, BEE_POWER_PIN);
 HydroServerMQTTClient mqttClient(*modem.createClient(), MQTT_BROKER);
 
 // ---- Sensors -------------------------------------------------------------
