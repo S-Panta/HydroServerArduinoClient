@@ -31,7 +31,7 @@
 // ---- Configuration -------------------------------------------------------
 // Broker hostname or IP address. test.mosquitto.org is a public test broker;
 // anyone can read what you publish there.
-const char *MQTT_BROKER = "test.mosquitto.org";
+const char *MQTT_BROKER = "144.39.174.90";
 
 // First two parts of every topic. Use your HydroServer site code and a
 // short, unique, lowercase ID for this device.
@@ -80,7 +80,7 @@ const char *getISO8601Time() {
 void connectWiFi() {
   Serial.print("Connecting to Wi-Fi ");
   Serial.print(WIFI_SSID);
-  WiFi.begin(WIFI_SSID, WIFI_PASS);
+  WiFi.begin("USU-guest", 0);
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
     Serial.print(".");

@@ -26,7 +26,7 @@
 #include <modems/ESP32Bee.h>
 
 // ---- Configuration -------------------------------------------------------
-const char *MQTT_BROKER = "test.mosquitto.org";
+const char *MQTT_BROKER = "144.39.174.90";
 const char *SITE_CODE = "uwrl";
 // Used as the ModularSensors logger ID and as the MQTT client ID
 const char *LOGGER_ID = "mayfly-esp32-01";
@@ -44,6 +44,9 @@ const int8_t BUTTON_PIN = 21;
 const int8_t WAKE_PIN = 31;
 const int8_t SD_CARD_POWER_PIN = -1;
 const int8_t SD_CARD_SS_PIN = 12;
+
+const char *wifiId = "USU-guest";
+const char *wifiPwd = 0;
 
 // ---- Modem ---------------------------------------------------------------
 HardwareSerial &beeSerial = Serial1; // Bee socket serial port
@@ -89,15 +92,20 @@ const uint8_t OBSERVATION_COUNT =
 // ---- Helpers -------------------------------------------------------------
 // Reconnects Wi-Fi and the broker if either dropped while asleep.
 void ensureConnected() {
+  if (!modem.isInternetAvailable()) {
+    Serial.println(F("Wi-Fi disconnected, reconnecting"));
+    if (!modem.connectToInternet(wifiId, wifiPwd)) {
+      Serial.println(F("Wi-Fi reconnect failed"));
+      return; // No point trying MQTT without a network
+    }
+    Serial.println(F("Wi-Fi reconnected"));
+  }
+
   if (mqttClient.isConnected()) {
     return;
   }
+
   Serial.println(F("MQTT disconnected, reconnecting"));
-  if (!modem.isInternetAvailable()) {
-    Serial.println(modem.connectToInternet(WIFI_SSID, WIFI_PASS)
-                       ? F("Wi-Fi reconnected")
-                       : F("Wi-Fi reconnect failed"));
-  }
   if (!mqttClient.connectToBroker()) {
     Serial.print(F("MQTT connection failed, error code: "));
     Serial.println(mqttClient.getConnectionError());
@@ -118,6 +126,7 @@ void publishCycle() {
     Serial.println(F("Published to MQTT broker"));
   } else {
     Serial.println(F("Publish failed, will retry next interval"));
+    Serial.println(published);
   }
 }
 
