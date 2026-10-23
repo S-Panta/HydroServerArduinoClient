@@ -29,6 +29,11 @@ public:
 
   bool isInternetAvailable() override;
 
+  // Normally,the baud rate is either 115200 or 57600 but sometime it can be
+  // different Use this function to detect the baud rate of your espressif bee
+  // baud Don't use this in production
+  uint32_t detectBaud(HardwareSerial &serial);
+
   // String getLocalIP() { return _modem.localIP().toString(); }
 
   uint32_t getNISTTime() override;
@@ -36,6 +41,14 @@ public:
   void extraSetupForHTTPS(const char *host, const int port);
 
   void extraSetupForMQTT() override;
+
+  String getMacAddress();
+
+  int8_t getSignalQuality();
+  String getLocalIP() { return _modem.getLocalIP(); }
+
+  String getModemInfo() { return _modem.getModemInfo(); }
+  String getFirmwareVersion();
 
 private:
   TinyGsm _modem;
