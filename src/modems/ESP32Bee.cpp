@@ -88,3 +88,42 @@ void ESP32Bee::extraSetupForHTTPS(const char *host, const int port) {
   _modem.sendAT(GF("+CIPSTART=0,\"SSL\",\""), host, GF("\","), port);
   _modem.sendAT(GF("+CIPSTART=1,\"SSL\",\""), host, GF("\","), port);
 }
+
+// This function can take longer time
+uint32_t ESP32Bee::detectBaud(HardwareSerial &serial) {
+  // TinyGSM tries for possible baud rate starting with 9600 to 115200
+  return TinyGsmAutoBaud(serial);
+}
+
+String ESP32Bee::getMacAddress() {
+  _modem.sendAT(GF("+CIPSTAMAC?"));
+  // Reply looks like: +CIPSTAMAC:"24:6f:28:aa:bb:cc"
+  if (_modem.waitResponse(2000L, GF("+CIPSTAMAC:\"")) != 1) {
+    return "";
+  }
+  String mac = _modem.stream.readStringUntil('"');
+  _modem.waitResponse(); // consume the trailing OK
+  mac.toUpperCase();
+  return mac;
+}
+
+int8_t ESP32Bee::getSignalQuality() {
+  // Uses AT+CWJAP? and returns the RSSI of the connected AP
+  return _modem.getSignalQuality();
+}
+
+String ESP32Bee::getFirmwareVersion() {
+  _modem.sendAT(GF("+GMR"));
+  if (_modem.waitResponse(2000L, GF("AT version:")) != 1) {
+    return "";
+  }
+  String version = _modem.stream.readStringUntil('(');
+  version.trim();
+
+  _modem.waitResponse(1000L);
+  while (_modem.stream.available()) {
+    _modem.stream.read();
+  }
+
+  return version;
+}
