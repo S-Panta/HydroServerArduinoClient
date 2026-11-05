@@ -1,5 +1,5 @@
 # HydroServerArduinoClient
-HydroServerArduinoClient is a client wrapper built on top of the ![ArduinoMqttClient](https://github.com/arduino-libraries/ArduinoMqttClient) and ![ArduinoHttpClient](https://github.com/arduino-libraries/ArduinoHttpClient) libraries. It provides a simple interface for sending sensor observations from Arduino-based field loggers to [HydroServer](https://github.com/hydroserver2) over HTTP(S) or to broker via MQTT.
+HydroServerArduinoClient is a client wrapper built on top of the [ArduinoMqttClient](https://github.com/arduino-libraries/ArduinoMqttClient) and [ArduinoHttpClient](https://github.com/arduino-libraries/ArduinoHttpClient) libraries. It provides a simple interface for sending sensor observations from Arduino-based field loggers to [HydroServer](https://github.com/hydroserver2) over HTTP(S) or to broker via MQTT.
 
 
 - **`HydroServerHTTPClient`** posts straight to HydroServer's SensorThings API.
@@ -23,9 +23,7 @@ cd ~/Documents/Arduino/libraries
 git clone https://github.com/EnviroDIY/TinyGSM.git
 ```
 
-
-## Some concept
-
+### Payload and other MQTT configuration
 ### Observations
 
 An `Observation` holds one reading:

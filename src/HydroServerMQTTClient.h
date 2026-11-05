@@ -85,7 +85,8 @@ public:
    * @brief Sets the site code, the first part of every topic.
    *
    * Use your HydroServer site's code (see
-   * [managing site metadata](https://hydroserver.org/user-guides/how-to/managing-site-metadata.html#managing-site-metadata)).
+   * [managing site
+   * metadata](https://hydroserver.org/user-guides/how-to/managing-site-metadata.html#managing-site-metadata)).
    * Call this before setLastWill() and connectToBroker(), since both use it.
    *
    * @param siteCode The site code. Empty or null values are ignored.
