@@ -1,9 +1,9 @@
-#DTS - 12 and CS451 Support for ModularSensors
-ModularSensors does not include drivers for the FTS DTS-12 turbidity sensor or the Campbell Scientific CS451 pressure transducer. This folder provides them. Both sensors communicate over SDI-12 and were tested on an EnviroDIY Mayfly using the Arduino IDE.
+# DTS12 and CS451 Support for ModularSensors
+ModularSensors does not include drivers for FTS DTS12 turbidity sensor or CS451 pressure transducer. This folder provides them. Both sensors communicate over SDI-12 and were tested on an EnviroDIY Mayfly using the Arduino IDE.
 | Sensor | Files | Measures |
 |---|---|---|
-| FTS **DTS-12** turbidity sensor | `DTS12.h`, `DTS12.cpp` | Turbidity statistics + water temperature |
-| Campbell Scientific **CS451** pressure transducer | `CS451.h`, `CS451.cpp` | Gage height (water level) + water temperature |
+| FTS DTS12 turbidity sensor | `DTS12.h`, `DTS12.cpp` | Turbidity statistics + water temperature |
+| CS451 pressure transducer | `CS451.h`, `CS451.cpp` | Gage height (water level) + water temperature |
 
 Both classes inherit from `SDI12Sensors`, so all SDI-12 communication (acknowledge, measure, data requests) goes through the ModularSensors parent class.
 
@@ -27,7 +27,7 @@ Both classes inherit from `SDI12Sensors`, so all SDI-12 communication (acknowled
 
 ## 2. Required library configuration
 
-The DTS-12 reports SDI-12 version 1.2 and **does not respond to the concurrent measurement command** that ModularSensors sends by default (`aCC!`, a concurrent measurement with CRC, where `a` is the sensor address). See Section 3.3.1 of the DTS-12 [User Manual](https://s3.amazonaws.com/Product_Sensors/700-DTS-12.pdf).
+If your DTS12 has SDI-12 version 1.2, the concurrent measurement command that ModularSensors sends by default (`aCC!`, a concurrent measurement with CRC, where `a` is the sensor address) will not work. See Section 3.3.1 of the DTS-12 [User Manual](https://s3.amazonaws.com/Product_Sensors/700-DTS-12.pdf).
 
 Open `ModularSensors/src/ModSensorConfig.h` and add these lines **inside the header guard** (after `#define SRC_MODSENSORCONFIG_H_` and before the final `#endif`):
 
@@ -53,7 +53,7 @@ Open `ModularSensors/src/ModSensorConfig.h` and add these lines **inside the hea
 
 ### Setup
 
-- **SDI-12 address:** the DTS-12 ships at address `0`. Change it to a unique address (e.g. `1`) before use, with the Arduino-SDI12 example [b_address_change](https://github.com/EnviroDIY/Arduino-SDI-12/tree/master/examples/b_address_change). You can also use a CR350 or another datalogger and send `aAb!`, where `a` is the old address and `b` is the new one.
+- **SDI-12 address:** the DTS-12 ships at address `0`. Change it to a unique address (e.g. `1`) before using with Mayfly. See Arduino-SDI12 example [b_address_change](https://github.com/EnviroDIY/Arduino-SDI-12/tree/master/examples/b_address_change). You can also use a CR350 or another datalogger and send `aAb!`, where `a` is the old address and `b` is the new one.
 - **Timing (in `DTS12.h`):** warm-up 9 s (includes the wiper cycle on power-up) and measurement time 40 s. Use a logging interval of **at least 2 minutes**.
 
 ### Example
@@ -79,13 +79,13 @@ Official manual: https://s.campbellsci.com/documents/us/manuals/cs451-cs456.pdf
 ### How the driver works
 
 - The CS451's default pressure output is psig (1 psi = 2.31 ft of water). This sensor has been configured to report **level in mm and temperature in °C**. If you use a different sensor, set its units first or change `CS451_PRESSURE_UNIT_NAME` to match.
-- The sensor is configured to average 50 measurements (`aXCONFIG2=50!`). The averaged result is read with the **`aM8!`** command instead of the standard `aM!`.
-- A single measurement cycle takes under 1.5 s, but averaging 50 readings takes about 52 seconds. Use a logging interval of **at least 2 minutes**.
+- The sensor is configured to average 20 measurements (`aXCONFIG2=20!`). The averaged result is read with the **`aM8!`** command instead of the standard `aM!`.
+- A single measurement cycle takes under 1.5 s, but averaging 20 readings takes about 30 seconds. Use a logging interval of **at least 2 minutes**.
 
 ### Setup
 
 - **SDI-12 address:** the CS451 ships at address `0`. Change it to a unique address (e.g. `2`) the same way as the DTS-12.
-- **Power:** the CS451 needs 6–18 V. Pass the pin that actually switches its power (on a Mayfly, `sensorPowerPin = 22`). Use `-1` only if it is powered continuously.
+- **Power:** the CS451 needs 6–18 V. Pass the pin that actually switches its power (on a Mayfly, `sensorPowerPin = 22`).
 
 ### Example
 

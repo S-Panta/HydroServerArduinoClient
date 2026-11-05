@@ -1,7 +1,10 @@
-/*
-  This file is part of HydroServerArduinoClient library.
-  Sabin Panta
-*/
+/**
+ * @file HydroServerHTTPClient.cpp
+ * @author Sabin Panta
+ * @brief Implementation of HydroServerHTTPClient.
+ *
+ * Part of the HydroServerArduinoClient library
+ */
 
 #include "HydroServerHTTPClient.h"
 
