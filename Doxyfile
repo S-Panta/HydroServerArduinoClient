@@ -1,0 +1,20 @@
+PROJECT_NAME           = "HydroServerArduinoClient"
+PROJECT_NUMBER         = 1.0.0
+PROJECT_BRIEF          = "Arduino client library to send observations to HydroServer via HTTP(S) or to broker via MQTT"
+OUTPUT_DIRECTORY       = docs/doxygen
+
+INPUT                  = README.md src extra
+FILE_PATTERNS          = *.h *.cpp *.md
+RECURSIVE              = YES
+EXCLUDE                = docs/apireference.md
+EXCLUDE_PATTERNS       = */testing_example/*
+USE_MDFILE_AS_MAINPAGE = README.md
+MARKDOWN_ID_STYLE      = GITHUB
+
+EXTRACT_ALL            = YES
+EXTENSION_MAPPING      = ino=C++
+EXAMPLE_PATH           = examples
+EXAMPLE_RECURSIVE      = YES
+
+HTML_COLORSTYLE        = LIGHT
+GENERATE_LATEX         = NO

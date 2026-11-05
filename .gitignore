@@ -1,5 +1,6 @@
 **/arduino_secrets.h
 **/mqtt_secrets.h
+docs/doxygen
 
 # macOS
 .DS_Store

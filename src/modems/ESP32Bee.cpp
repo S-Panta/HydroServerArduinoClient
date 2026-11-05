@@ -1,7 +1,10 @@
-/*
-  This file is part of HydroServerArduinoClient library.
-  Sabin Panta
-*/
+/**
+ * @file ESP32Bee.cpp
+ * @author Sabin Panta
+ * @brief Implementation of ESP32Bee.
+ *
+ * Part of the HydroServerArduinoClient library
+ */
 #include <modems/ESP32Bee.h>
 
 ESP32Bee::ESP32Bee(Stream &xbeeSerial, int8_t powerPin)
@@ -18,22 +21,17 @@ Client *ESP32Bee::createSecureClient() {
 
 bool ESP32Bee::connectToInternet(const char *ssid, const char *password,
                                  uint32_t maxConnectionTime) {
-  // make sure the modem was powered on first
+  // Power up here in case the sketch didn't.
   powerUp();
-  // This does some configuration in the Esp32 modem
   _modem.init();
 
   if (!_modem.networkConnect(ssid, password)) {
     return false;
   }
 
-  // this checks whether local IP and DNS have been allocated
-  // and not 0.0.0.0
   if (!(isInternetAvailable())) {
-    // waits and check for isNetworkConnected()
-    // default time is 60s
     if (!_modem.waitForNetwork(maxConnectionTime)) {
-      // debug the output as network not connected
+      // TODO: print a debug message here.
       return false;
       // PRINTOUT(F("... WiFi connection failed"));
     }
@@ -43,55 +41,49 @@ bool ESP32Bee::connectToInternet(const char *ssid, const char *password,
 
 bool ESP32Bee::isInternetAvailable() { return _modem.isNetworkConnected(); }
 
-// returns time in utc
+// Returns seconds since 2000-01-01 UTC, the DS3231's epoch.
 uint32_t ESP32Bee::getNISTTime() {
-  // opens UDP socket for time server
-  // by default, the time server is pool.ntp.org.
-  // by default, it returns UTC time
+  // Sync over UDP with pool.ntp.org, at a UTC offset of 0.
   _modem.NTPServerSync("pool.ntp.org", 0);
-  // this function waits for 120 seconds by defaults
+  // Wait up to 30 seconds (TinyGSM's default is 120).
   _modem.waitForTimeSync(30);
   uint32_t epoch = _modem.getNetworkEpoch(TinyGSM_EpochStart::UNIX);
 
-  // Mayfly logger has Onboard realtime clock (RTC) (DS3231)
-  // DS3231 chip give the number of seconds since January 1, 2000
-  // Unix Time, which is the number of seconds since 1/1/1970
+  // The Mayfly's DS3231 counts seconds from 2000-01-01, not 1970-01-01, so
+  // shift by the 946684800 seconds between the two.
   // https://www.envirodiy.org/ds3231-real-time-clock-rtc-date-conversion/
-  // DateTime dt(unixTime - 946684800UL);
   uint32_t currentdateTime = epoch - 946684800UL;
   return currentdateTime;
 }
 
 void ESP32Bee::extraSetupForMQTT() {
-  // See
-  // :https://docs.espressif.com/projects/esp-at/en/release-v2.4.0.0/esp32/AT_Command_Set/TCP-IP_AT_Commands.html#at-ciprecvmode-query-set-socket-receiving-mode
-  // This should be done before opening tcp connection
+  // Passive receive mode: incoming data waits in the ESP32's buffer until
+  // TinyGSM asks for it. Has to be set before a TCP connection opens.
+  // https://docs.espressif.com/projects/esp-at/en/release-v2.4.0.0/esp32/AT_Command_Set/TCP-IP_AT_Commands.html#at-ciprecvmode-query-set-socket-receiving-mode
   _modem.sendAT(GF("+CIPRECVMODE=1"));
 }
 
 void ESP32Bee::extraSetupForHTTPS(const char *host, const int port) {
-  // Some HTTPS servers(like playground instance of hydroserver) host multiple
-  // domains on the same IP address. During the TLS handshake, the modem must
-  // send the hostname using Server Name Indication so the server can present
-  // the correct SSL/TLS certificate. Without SNI, the connection may fail even
-  // though DNS resolution and TCP connectivity succeed.
+  // Some HTTPS servers, like the HydroServer playground, host several domains
+  // on one IP address. The modem has to send the host name during the TLS
+  // handshake (SNI) so the server presents the right certificate. Without it
+  // the connection can fail even though DNS and TCP both work.
   _modem.sendAT(GF("+CIPRECVMODE=1"));
-  // Ref:
+  // Set SNI on both link IDs.
   // https://docs.espressif.com/projects/esp-at/en/release-v2.4.0.0/esp32/AT_Command_Set/TCP-IP_AT_Commands.html#at-cipsslcsni-query-set-ssl-client-server-name-indication-sni
   _modem.sendAT(GF("+CIPSSLCSNI=0,\""), host, GF("\""));
   _modem.sendAT(GF("+CIPSSLCSNI=1,\""), host, GF("\""));
   delay(3000);
 
-  // See :
+  // Open the TLS connection, again on both link IDs.
   // https://docs.espressif.com/projects/esp-at/en/latest/esp32/AT_Command_Set/TCP-IP_AT_Commands.html#cmd-start
-  // same as above. This also need to be done twice
   _modem.sendAT(GF("+CIPSTART=0,\"SSL\",\""), host, GF("\","), port);
   _modem.sendAT(GF("+CIPSTART=1,\"SSL\",\""), host, GF("\","), port);
 }
 
-// This function can take longer time
+// Can take several seconds.
 uint32_t ESP32Bee::detectBaud(HardwareSerial &serial) {
-  // TinyGSM tries for possible baud rate starting with 9600 to 115200
+  // TinyGSM tries each common rate from 9600 to 115200.
   return TinyGsmAutoBaud(serial);
 }
 

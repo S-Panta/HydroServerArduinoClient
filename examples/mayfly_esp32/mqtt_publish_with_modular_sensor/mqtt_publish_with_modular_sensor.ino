@@ -20,13 +20,12 @@
 // Include ModularSensors before the other libraries
 #include <ModularSensors.h>
 
-#include "arduino_secrets.h"
 #include <HydroServerMQTTClient.h>
 #include <Sodaq_DS3231.h>
 #include <modems/ESP32Bee.h>
 
 // ---- Configuration -------------------------------------------------------
-const char *MQTT_BROKER = "144.39.174.90";
+const char *MQTT_BROKER = "144.39.51.28";
 const char *SITE_CODE = "uwrl";
 // Used as the ModularSensors logger ID and as the MQTT client ID
 const char *LOGGER_ID = "mayfly-esp32-01";
@@ -51,7 +50,7 @@ const char *wifiPwd = 0;
 // ---- Modem ---------------------------------------------------------------
 HardwareSerial &beeSerial = Serial1; // Bee socket serial port
 const int8_t BEE_POWER_PIN = 18;     // Bee socket power pin on Mayfly v1.x
-const uint32_t BEE_BAUD = 57600;     // ESP32 AT firmware baud rate
+const uint32_t BEE_BAUD = 38400;     // ESP32 AT firmware baud rate
 
 ESP32Bee modem(beeSerial, BEE_POWER_PIN);
 HydroServerMQTTClient mqttClient(*modem.createClient(), MQTT_BROKER);
@@ -117,7 +116,7 @@ void publishCycle() {
   String timestamp =
       Logger::formatDateTime_ISO8601(Logger::markedLocalUnixTime);
 
-  batteryObs.value = batteryVoltage->getValue();
+  batteryObs.value = variableList[0]->getValue();
   boardTempObs.value = boardTemperature->getValue();
 
   uint8_t published =
@@ -145,7 +144,7 @@ void setup() {
   modem.powerUp();
   delay(1000); // give the ESP32 time to boot
 
-  if (modem.connectToInternet(WIFI_SSID, WIFI_PASS)) {
+  if (modem.connectToInternet(wifiId, wifiPwd)) {
     Serial.println(F("Wi-Fi connected"));
     // getNISTTime() returns seconds since 2000-01-01, the DS3231's epoch
     rtc.begin();
@@ -163,7 +162,7 @@ void setup() {
   mqttClient.setLastWill("offline");
   // Longer than the logging interval, so the broker doesn't drop the
   // connection while the logger sleeps
-  mqttClient.setKeepAliveInterval(LOGGING_INTERVAL_MINUTES * 60 + 60);
+  mqttClient.setKeepAliveInterval(10);
 
   if (mqttClient.connectToBroker()) {
     Serial.println(F("Connected to MQTT broker"));
@@ -197,6 +196,6 @@ void loop() {
     ensureConnected();
     publishCycle();
   }
+  Serial.println("I am in the poull area");
   mqttClient.poll();
-  dataLogger.systemSleep();
 }
