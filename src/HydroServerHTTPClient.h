@@ -4,7 +4,7 @@
  * @brief HTTP(S) client that posts observations to HydroServer's
  * SensorThings API.
  *
- * Part of the HydroServerArduinoClient library, 
+ * Part of the HydroServerArduinoClient library
  */
 
 #ifndef SRC_HYDROSERVERHTTPCLIENT_H_
@@ -55,7 +55,7 @@ public:
   /**
    * @brief Sets the API key sent with every request.
    *
-   * @param apiKey The key. 
+   * @param apiKey The key.
    */
   void setApiKey(const char *apiKey);
 

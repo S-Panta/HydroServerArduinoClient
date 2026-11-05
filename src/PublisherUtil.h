@@ -3,7 +3,7 @@
  * @author Sabin Panta
  * @brief The Observation struct and the JSON payload both clients send.
  *
- * Part of the HydroServerArduinoClient library, 
+ * Part of the HydroServerArduinoClient library
  */
 
 /**
