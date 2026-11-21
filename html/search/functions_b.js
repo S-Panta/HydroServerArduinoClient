@@ -7,8 +7,9 @@ var searchData=
   ['setclientid_4',['setClientID',['../classHydroServerMQTTClient.html#a11e5139aa87c0071056bb158d82adf7a',1,'HydroServerMQTTClient']]],
   ['setconnectiontimeout_5',['setConnectionTimeout',['../classHydroServerMQTTClient.html#ad828394bb1e29245655d592bdaddb04b',1,'HydroServerMQTTClient']]],
   ['setkeepaliveinterval_6',['setKeepAliveInterval',['../classHydroServerMQTTClient.html#a9eab680268d0742f21d4606e3c0d6923',1,'HydroServerMQTTClient']]],
-  ['setlastwill_7',['setLastWill',['../classHydroServerMQTTClient.html#a5c64dab01867260053cfe3fe4156a09f',1,'HydroServerMQTTClient']]],
-  ['setsitecode_8',['setSiteCode',['../classHydroServerMQTTClient.html#a38fa78c8ca644bd6b16c13c8b2332641',1,'HydroServerMQTTClient']]],
-  ['startsdi12measurement_9',['startSDI12Measurement',['../classCS451.html#abbeac22bbedeace09fb37f32750f85e6',1,'CS451::startSDI12Measurement()'],['../classDTS12.html#a809cad82030194eb88d96779038e46bf',1,'DTS12::startSDI12Measurement()']]],
-  ['subscribe_10',['subscribe',['../classHydroServerMQTTClient.html#a94f19ce769f63809ea9b915f536cbc9d',1,'HydroServerMQTTClient']]]
+  ['setlastwill_7',['setLastWill',['../classHydroServerMQTTClient.html#aa6e95c09d5297c4080b10b75c6ee717d',1,'HydroServerMQTTClient']]],
+  ['setmqttconnectconfig_8',['setMqttConnectConfig',['../classHydroServerMQTTClient.html#af7de74dea9df429b623c9282bda45954',1,'HydroServerMQTTClient']]],
+  ['setsitecode_9',['setSiteCode',['../classHydroServerMQTTClient.html#a38fa78c8ca644bd6b16c13c8b2332641',1,'HydroServerMQTTClient']]],
+  ['startsdi12measurement_10',['startSDI12Measurement',['../classCS451.html#abbeac22bbedeace09fb37f32750f85e6',1,'CS451::startSDI12Measurement()'],['../classDTS12.html#a809cad82030194eb88d96779038e46bf',1,'DTS12::startSDI12Measurement()']]],
+  ['subscribe_11',['subscribe',['../classHydroServerMQTTClient.html#a94f19ce769f63809ea9b915f536cbc9d',1,'HydroServerMQTTClient']]]
 ];
