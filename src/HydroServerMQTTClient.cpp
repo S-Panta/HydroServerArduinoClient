@@ -14,10 +14,8 @@ HydroServerMQTTClient::HydroServerMQTTClient(Client &client, const char *broker,
                                              const char *clientId,
                                              const char *username,
                                              const char *password)
-    : _mqttClient(client), _port(port), _broker(broker),
-      // Optional settings start empty and are filled in by the setters.
-      _clientId(nullptr), _username(nullptr), _password(nullptr),
-      _sitecode(nullptr) {
+    : _mqttClient(client), _port(port), _broker(broker), _username(nullptr),
+      _password(nullptr), _clientId(nullptr) {
 
   setClientID(clientId);
   setAuthentication(username, password);
@@ -27,21 +25,28 @@ HydroServerMQTTClient::HydroServerMQTTClient(Client &client)
     : HydroServerMQTTClient(client, nullptr) {}
 
 void HydroServerMQTTClient::setCleanSession(bool cleanSession) {
-  // true: the broker forgets this client's state when it disconnects.
-  // false: the broker keeps it, which only works with a fixed client ID
-  // (a random ID is effectively always a clean session).
-  // For QoS 0 publishing the difference doesn't matter.
+  // When this is set to true, the broker forgets this client's state when it
+  // disconnects. If set to false, the broker remember client's state For QoS 0
+  // publishing the difference doesn't matter.
   _cleanSession = cleanSession;
 }
 
-int HydroServerMQTTClient::connectToBroker() {
-  // Uses whatever was set through the constructor, the setters, or the
-  // long form of connectToBroker().
+void HydroServerMQTTClient::setdefaultclientid() {
+  static char defaultId[24];
+  randomSeed(analogRead(A0) + micros());
+  snprintf(defaultId, sizeof(defaultId), "arduinologger-%ld", random(1, 101));
+  _clientId = defaultId;
+}
+
+bool HydroServerMQTTClient::connectToBroker() {
+  // Uses whatever was set through the constructor, the setters
 
   if (_broker == nullptr || strlen(_broker) == 0) {
     return 0;
   }
-  // ArduinoMqttClient takes these in milliseconds.
+  if (_clientId == nullptr) {
+    setdefaultclientid();
+  }
   _mqttClient.setId(_clientId);
   _mqttClient.setUsernamePassword(_username, _password);
   _mqttClient.setKeepAliveInterval(_keepAliveSeconds * 1000UL);
@@ -51,10 +56,10 @@ int HydroServerMQTTClient::connectToBroker() {
   return _mqttClient.connect(_broker, _port);
 }
 
-int HydroServerMQTTClient::connectToBroker(const char *broker, uint16_t port,
-                                           const char *clientId,
-                                           const char *username,
-                                           const char *password) {
+bool HydroServerMQTTClient::connectToBroker(const char *broker, uint16_t port,
+                                            const char *clientId,
+                                            const char *username,
+                                            const char *password) {
 
   _broker = broker;
   _port = port;
@@ -65,12 +70,16 @@ int HydroServerMQTTClient::connectToBroker(const char *broker, uint16_t port,
 }
 
 void HydroServerMQTTClient::setClientID(const char *clientId) {
-  // Without an ID, ArduinoMqttClient makes one up from millis(), so it changes
-  // on every connection. A fixed, unique ID is what lets the broker resume
-  // a persistent session.
   if (clientId != nullptr && strlen(clientId) > 0) {
     _clientId = clientId;
   }
+}
+
+void HydroServerMQTTClient::setMqttConnectConfig(bool retain, uint8_t qos,
+                                                 bool dup) {
+  _retain = retain;
+  _qos = qos;
+  _dup = dup;
 }
 
 void HydroServerMQTTClient::setSiteCode(const char *siteCode) {
@@ -92,9 +101,7 @@ const char *
 HydroServerMQTTClient::getObservationTopic(const Observation &observation) {
 
   // siteCode/clientId/sensorId/observedProperty
-  // The site code has to be set, or the topic is malformed and the broker
-  // may close the connection. The other parts can technically be empty, but
-  // the data is much harder to find that way.
+  // Any message with empty topic would be rejected by broker
   snprintf(_observationTopic, sizeof(_observationTopic), "%s/%s/%s/%s",
            _sitecode, _clientId, observation.sensorId,
            observation.observedProperty);
@@ -104,8 +111,6 @@ HydroServerMQTTClient::getObservationTopic(const Observation &observation) {
 
 int HydroServerMQTTClient::publishObservation(const Observation &observation,
                                               const char *phenomenonTime) {
-  // Any packet we send counts as keep-alive activity (MQTT-3.1.2-23). When
-  // nothing is being published, poll() sends the PINGREQ instead.
 
   String payload = ObservationPayload::serialize(observation, phenomenonTime);
 
@@ -114,24 +119,25 @@ int HydroServerMQTTClient::publishObservation(const Observation &observation,
     // broker.
     return 0;
   };
-  // TODO: support retain, QoS and dup through
-  // beginMessage(topic, size, retain, qos, dup).
   // TODO: the default payload limit is 256 bytes; look into raising it.
 
   const char *topic = getObservationTopic(observation);
-  _mqttClient.beginMessage(topic, (unsigned long)payload.length());
+  _mqttClient.beginMessage(topic, (unsigned long)payload.length(), _retain,
+                           _qos, _dup);
   _mqttClient.print(payload);
   // At QoS 0, endMessage() returns 1 even if the broker never gets the
   // message. Only QoS 1 and 2 report a failed send.
   return _mqttClient.endMessage();
 }
 
-int HydroServerMQTTClient::setLastWill(const char *payload, bool retain,
-                                       int qos) {
+int HydroServerMQTTClient::setLastWill(const char *payload) {
   size_t payloadLength = strlen(payload);
+  if (_clientId == nullptr) {
+    setdefaultclientid();
+  }
   snprintf(_lastWillTopic, sizeof(_lastWillTopic), "%s/%s/lwt", _sitecode,
            _clientId);
-  _mqttClient.beginWill(_lastWillTopic, payloadLength, retain, qos);
+  _mqttClient.beginWill(_lastWillTopic, payloadLength, _retain, _qos);
   _mqttClient.print(payload);
   return _mqttClient.endWill();
 }
