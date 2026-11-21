@@ -22,17 +22,18 @@
 #include <modems/ESP32Bee.h>
 
 // ---- Configuration -------------------------------------------------------
-const char *MQTT_BROKER = "test.mosquitto.org";
+const char *MQTT_BROKER = "192.168.0.101";
 const char *SITE_CODE = "uwrl";
-const char *CLIENT_ID = "mayfly-esp32-01";
 
-// Publish when the clock reaches a multiple of this many minutes
-const uint32_t PUBLISH_INTERVAL_MINUTES = 1;
+const uint32_t PUBLISH_INTERVAL = 10;
+
+char ssid[] = WIFI_SSID;
+char pass[] = WIFI_PASS;
 
 // ---- Hardware ------------------------------------------------------------
 HardwareSerial &beeSerial = Serial1; // Bee socket serial port
 const int8_t BEE_POWER_PIN = 18;     // Bee socket power pin on Mayfly v1.x
-const uint32_t BEE_BAUD = 57600;     // ESP32 AT firmware baud rate
+const uint32_t BEE_BAUD = 38400;     // ESP32 AT firmware baud rate
 
 ESP32Bee modem(beeSerial, BEE_POWER_PIN);
 // To echo all AT commands to the Serial Monitor while debugging, use:
@@ -64,11 +65,12 @@ void setup() {
   delay(1000); // give the ESP32 time to boot
 
   Serial.println("Connecting to Wi-Fi");
-  if (!modem.connectToInternet(WIFI_SSID, WIFI_PASS)) {
+  if (!modem.connectToInternet(ssid, pass)) {
     Serial.println("Wi-Fi connection failed");
     while (true) {
     }
   }
+  Serial.println(modem.getLocalIP());
   Serial.println("Wi-Fi connected");
 
   // getNISTTime() returns seconds since 2000-01-01, the DS3231's epoch
@@ -81,42 +83,60 @@ void setup() {
   // Required on the ESP32 before opening an MQTT connection
   modem.extraSetupForMQTT();
 
-  mqttClient.setSiteCode(SITE_CODE);
-  mqttClient.setClientID(CLIENT_ID);
-  mqttClient.setKeepAliveInterval(100); // seconds
+  // mqttClient.setSiteCode(SITE_CODE);
+  // mqttClient.setClientID(CLIENT_ID);
+  mqttClient.setKeepAliveInterval(100);
+  mqttClient.setLastWill("this is the end");
 
   Serial.print("Connecting to MQTT broker ");
   Serial.println(MQTT_BROKER);
-  if (!mqttClient.connectToBroker()) {
-    Serial.print("MQTT connection failed, error code: ");
-    Serial.println(mqttClient.getConnectionError());
-    while (true) {
-    }
-  }
+  mqttClient.setMqttConnectConfig(true);
+  Serial.println(mqttClient.connectToBroker());
+  Serial.println(mqttClient.getConnectionError());
+  // if (!mqttClient.connectToBroker()) {
+  //   Serial.print("MQTT connection failed, error code: ");
+  //   Serial.println(mqttClient.getConnectionError());
+  //   while (true) {
+  //   }
+  // }
   Serial.println("Connected to MQTT broker");
+  uint32_t epoch = now.getEpoch();
+  temperature.value = random(200, 251) / 10.0;
+  Serial.println(
+      mqttClient.publishObservation(temperature, getISO8601Time(now)));
+  Serial.println(mqttClient.getObservationTopic(temperature));
+  Serial.println("message send ");
+  delay(10000);
+  temperature.value = random(200, 251) / 10.0;
+  Serial.println(
+      mqttClient.publishObservation(temperature, getISO8601Time(now)));
+  Serial.println("message send ");
 }
 
 void loop() {
-  mqttClient.poll();
+  // // Serial.println("I am in the loop");
+  // DateTime now = rtc.now();
+  // uint32_t epoch = now.getEpoch();
 
-  DateTime now = rtc.now();
-  uint32_t epoch = now.getEpoch();
+  // // True only on the clock boundary (e.g. second :00 of every interval)
+  // bool onInterval = (epoch % PUBLISH_INTERVAL == 0);
 
-  // True only on the clock boundary (e.g. second :00 of every interval)
-  bool onInterval = (epoch % (PUBLISH_INTERVAL_MINUTES * 60) == 0);
+  // // The boundary lasts a whole second; publish only once per boundary
+  // if (onInterval && epoch != lastPublishedEpoch) {
+  //   lastPublishedEpoch = epoch;
 
-  // The boundary lasts a whole second; publish only once per boundary
-  if (onInterval && epoch != lastPublishedEpoch) {
-    lastPublishedEpoch = epoch;
+  //   // Simulated reading: replace with your own sensor code
+  //   temperature.value = random(200, 251) / 10.0;
+  //   if(!mqttClient.isConnected()){
+  //     Serial.println("mqtt is not connected");
+  //     mqttClient.connectToBroker();
+  //   }
 
-    // Simulated reading: replace with your own sensor code
-    temperature.value = random(200, 251) / 10.0;
-
-    if (mqttClient.publishObservation(temperature, getISO8601Time(now))) {
-      Serial.print("Published to ");
-      Serial.println(mqttClient.getObservationTopic(temperature));
-    } else {
-      Serial.println("Publish failed (not connected?)");
-    }
-  }
+  //   if (mqttClient.publishObservation(temperature, getISO8601Time(now))) {
+  //     Serial.print("Published to ");
+  //     Serial.println(mqttClient.getObservationTopic(temperature));
+  //   } else {
+  //     Serial.println("Publish failed");
+  //   }
+  // }
 }

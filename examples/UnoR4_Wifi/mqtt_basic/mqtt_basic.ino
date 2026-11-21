@@ -31,7 +31,9 @@
 // ---- Configuration -------------------------------------------------------
 // Broker hostname or IP address. test.mosquitto.org is a public test broker;
 // anyone can read what you publish there.
-const char *MQTT_BROKER = "144.39.174.90";
+const char *MQTT_BROKER = "192.168.0.101";
+char ssid[] = WIFI_SSID;
+char pass[] = WIFI_PASS;
 
 // First two parts of every topic. Use your HydroServer site code and a
 // short, unique, lowercase ID for this device.
@@ -39,7 +41,7 @@ const char *SITE_CODE = "uwrl";
 const char *CLIENT_ID = "uno-r4-publisher";
 
 // How often to publish (milliseconds)
-const unsigned long PUBLISH_INTERVAL_MS = 30000;
+const unsigned long PUBLISH_INTERVAL_MS = 5000;
 
 // ---- Objects -------------------------------------------------------------
 WiFiClient wifiClient;
@@ -79,11 +81,10 @@ const char *getISO8601Time() {
 
 void connectWiFi() {
   Serial.print("Connecting to Wi-Fi ");
-  Serial.print(WIFI_SSID);
-  WiFi.begin("USU-guest", 0);
+  WiFi.begin(ssid, pass);
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
-    Serial.print(".");
+    Serial.print("no wifi is connected");
   }
   Serial.println();
 
@@ -114,13 +115,14 @@ void setup() {
   Serial.begin(115200);
   while (!Serial && millis() < 5000) {
   }
+  Serial.println("Starting the code");
 
   connectWiFi();
   syncRTCFromNTP();
 
   // Site code and client ID build every topic; set them before connecting.
   mqttClient.setSiteCode(SITE_CODE);
-  mqttClient.setClientID(CLIENT_ID);
+  // mqttClient.setClientID(CLIENT_ID);
 
   // Optional: message the broker publishes to <siteCode>/<clientId>/lwt if
   // this device drops off without disconnecting. Call after the two setters
